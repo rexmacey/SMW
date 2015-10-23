@@ -62,6 +62,9 @@ create_ydata_file<-function(InstallNum=1){
         out<-merge(out,ret,by="COMPANY_ID",all.x = T)    
     }
     out$INSTALLDT <- strDate
+    idx.dup<-duplicated(out)
+    out<-out[!idx.dup,]
+    row.names(out)<-paste(out[,"COMPANY_ID"],out[,"INSTALLDT"],sep="")
     return(out)
 }  
 
@@ -603,36 +606,56 @@ create_xdata_file<-function(InstallNum=1){
     strDate<-sipbInstallDates[InstallNum]
     
     out <- get_ci_data(strDate)
+    out <- merge(out,get_psd_data(strDate),by="COMPANY_ID")
+    
+    out <- out[out$PRICE>=5 & out$MKTCAP>=250,]
+    
     out <- merge(out,get_perc_data(strDate),by="COMPANY_ID")
     out <- merge(out,get_mlt_data(strDate), by="COMPANY_ID")
     out <- merge(out,get_gr_data(strDate),by="COMPANY_ID")
     out <- merge(out,get_rat_data(strDate),by="COMPANY_ID")
-    out <- merge(out,get_psd_data(strDate),by="COMPANY_ID")
     out <- merge(out,get_ee_data(strDate),by="COMPANY_ID")
     out$INSTALLDT <- strDate
+    idx<-out$SP=="NA"
+    levels(out$SP) <- c("400","500","600","x")
+    out$SP[idx]<-"x"  # replace NA with x
+    out$ADR<-factor(out$ADR)
+    out$OPTIONABLE<-factor(out$OPTIONABLE)
+    levels(out$EXCHANGE) <- c("A","M","N","O","x")
+    for (v in names(out)){  # replace infinites with median of other variables
+        if (typeof(out[,v])=="double"){
+            idx<-is.infinite(out[,v])
+            out[idx,v]<-median(out[!idx,v])
+        }
+    }
+    idx.dup<-duplicated(out)
+    out<-out[!idx.dup,]
+    row.names(out)<-paste(out[,"COMPANY_ID"],out[,"INSTALLDT"],sep="")
     return(out)
 }
+
+orphancode<-function(){
     # From Greenblatt
     # Enterprise Value = MktCapQ1+LTDQ1+PfdStkQ1+STDQ1-CashQ1
-#     ENTVAL_Q1 <- out$MKTCAP + out$LTDEBT_Q1 + out$PREF_Q1 + out$STDEBT_Q1 - out$CASH_Q1
-#     ENTVAL_Q1[ENTVAL_Q1<=0]<-NA
-#     EBIT_12M <- out$PTI_12M + out$INT_12M
-#     EBIT_12M[EBIT_12M<=0]<-NA
-#     out$EBITEV <- 100* EBIT_12M / ENTVAL_Q1
-#     TANGIBLECAPITAL <- out$AR_Q1 + out$INV_Q1 + out$CASH_Q1 + out$AP_Q1
-#     TANGIBLECAPITAL[TANGIBLECAPITAL<=0]<-NA
-#     out$ROC<-100 * EBIT_12M / TANGIBLECAPITAL
+    #     ENTVAL_Q1 <- out$MKTCAP + out$LTDEBT_Q1 + out$PREF_Q1 + out$STDEBT_Q1 - out$CASH_Q1
+    #     ENTVAL_Q1[ENTVAL_Q1<=0]<-NA
+    #     EBIT_12M <- out$PTI_12M + out$INT_12M
+    #     EBIT_12M[EBIT_12M<=0]<-NA
+    #     out$EBITEV <- 100* EBIT_12M / ENTVAL_Q1
+    #     TANGIBLECAPITAL <- out$AR_Q1 + out$INV_Q1 + out$CASH_Q1 + out$AP_Q1
+    #     TANGIBLECAPITAL[TANGIBLECAPITAL<=0]<-NA
+    #     out$ROC<-100 * EBIT_12M / TANGIBLECAPITAL
     # Remove unneeded variables
-#     unneeded<-paste("EPSCON_12M, ",
-#                     "EPSCON_Y1, EPSCON_Y2, EPSCON_Y3, EPSCON_Y4, EPSCON_Y5, ",
-#                     "DPS_12M, DPS_Y1, DPS_Y2, DPS_Y3, DPS_Y4, DPS_Y5, DPS_Y6, DPS_Y7, ",
-#                     "EPS_12M, EPS_Y1, EPSDC_Y1, PTI_12M, INT_12M, AVD_10D, AVM_03M",
-#                     "LTDEBT_Q1, PREF_Q1, STDEBT_Q1, CASH_Q1, AR_Q1, INV_Q1, AP_Q1",sep="")
-#     unneeded<-unlist(strsplit(unneeded,", "))
-#     for (x in unneeded){
-#         out[,x]<-NULL    
-#     }
-
+    #     unneeded<-paste("EPSCON_12M, ",
+    #                     "EPSCON_Y1, EPSCON_Y2, EPSCON_Y3, EPSCON_Y4, EPSCON_Y5, ",
+    #                     "DPS_12M, DPS_Y1, DPS_Y2, DPS_Y3, DPS_Y4, DPS_Y5, DPS_Y6, DPS_Y7, ",
+    #                     "EPS_12M, EPS_Y1, EPSDC_Y1, PTI_12M, INT_12M, AVD_10D, AVM_03M",
+    #                     "LTDEBT_Q1, PREF_Q1, STDEBT_Q1, CASH_Q1, AR_Q1, INV_Q1, AP_Q1",sep="")
+    #     unneeded<-unlist(strsplit(unneeded,", "))
+    #     for (x in unneeded){
+    #         out[,x]<-NULL    
+    #     }
+}
 
 yret<-function(InstallNum, nmonths,varname="RET"){
     # calculate the returns over the next nmonths AFTER InstallNum (not beginning with InstallNum)
@@ -731,26 +754,34 @@ create_102to103_lookuptable<-function(){
     return(id_translate)
 }
 
-
-if (T){ 
-    # build x & y training dataset for 200301 - 200712
-    xtrain <- lapply(2:61,create_xdata_file)
-    save(xtrain,file=paste(rdata.folder,"xtrain.rdata",sep=""))
-    rm(xtrain)
-    
-    load(paste(rdata.folder,"returnsmonthly.rdata",sep=""))  #CompanyID, ret by month
-    ytrain <- lapply(2:61,create_ydata_file)
-    save(ytrain,file=paste(rdata.folder,"ytrain.rdata",sep=""))
-    rm(ytrain,returns.monthly)
-    
-    xtest <- create_xdata_file(61+12)
-    load(paste(rdata.folder,"returnsmonthly.rdata",sep=""))  #CompanyID, ret by month
-    ytest <- create_ydata_file(61+12)
-    rm(returns.monthly)
-    save(xtest,ytest,file=paste(rdata.folder,"xytest.rdata",sep=""))
-    library(beepr)
-    beep(3)    
+for (i in 1:152){
+    print(i)
+    xdata<-create_xdata_file(i)
+    save(xdata,file=paste(rdata.folder,"xdata",sipbInstallDates[i],".rdata",sep=""))
+    ydata<-create_ydata_file(i)
+    save(ydata,file=paste(rdata.folder,"ydata",sipbInstallDates[i],".rdata",sep=""))
 }
+library(beepr)
+beep(3)
+# if (T){ 
+#     # build x & y training dataset for 200301 - 200712
+#     xtrain <- lapply(2:61,create_xdata_file)
+#     save(xtrain,file=paste(rdata.folder,"xtrain.rdata",sep=""))
+#     rm(xtrain)
+#     
+#     #load(paste(rdata.folder,"returnsmonthly.rdata",sep=""))  #CompanyID, ret by month
+#     #ytrain <- lapply(2:61,create_ydata_file)
+#     #save(ytrain,file=paste(rdata.folder,"ytrain.rdata",sep=""))
+#     #rm(ytrain,returns.monthly)
+#     
+#     xtest <- create_xdata_file(61+12)
+#     load(paste(rdata.folder,"returnsmonthly.rdata",sep=""))  #CompanyID, ret by month
+#     ytest <- create_ydata_file(61+12)
+#     rm(returns.monthly)
+#     save(xtest,ytest,file=paste(rdata.folder,"xytest.rdata",sep=""))
+#     library(beepr)
+#     beep(3)    
+# }
 
 # load xtrain.  subset on price and market cap and ???
 # remove useless xvariables index on company_id?
