@@ -1,5 +1,6 @@
 # Create data files (in-sample, out of sample)
 library(reshape2)
+library(randomForest)
 setwd("C:/Users/Rex/Documents/Quant Trading/SMW")
 load("sipbInstallDates.rdata")
 rdata.folder <- "D:/SIPro/rdata/"
@@ -62,9 +63,15 @@ create_ydata_file<-function(InstallNum=1){
         out<-merge(out,ret,by="COMPANY_ID",all.x = T)    
     }
     out$INSTALLDT <- strDate
-    idx.dup<-duplicated(out)
+#     idx.dup<-duplicated(out)
+#     out<-out[!idx.dup,]
+#     row.names(out)<-paste(out[,"COMPANY_ID"],out[,"INSTALLDT"],sep="")
+    
+    out2<-out[,c("COMPANY_ID","INSTALLDT")]
+    idx.dup<-duplicated(out2)
     out<-out[!idx.dup,]
     row.names(out)<-paste(out[,"COMPANY_ID"],out[,"INSTALLDT"],sep="")
+    
     return(out)
 }  
 
@@ -628,7 +635,9 @@ create_xdata_file<-function(InstallNum=1){
             out[idx,v]<-median(out[!idx,v])
         }
     }
-    idx.dup<-duplicated(out)
+    
+    out2<-out[,c("COMPANY_ID","INSTALLDT")]
+    idx.dup<-duplicated(out2)
     out<-out[!idx.dup,]
     row.names(out)<-paste(out[,"COMPANY_ID"],out[,"INSTALLDT"],sep="")
     return(out)
@@ -754,15 +763,72 @@ create_102to103_lookuptable<-function(){
     return(id_translate)
 }
 
-for (i in 1:152){
+CreateRF<-function(xdata,ydata){
+    #load(paste(rdata.folder,"xdata",sipbInstallDates[i],".rdata",sep=""))
+    #load(paste(rdata.folder,"ydata",sipbInstallDates[i],".rdata",sep=""))
+    x.df<-xdata
+    x.df$COMPANY_ID<-NULL
+    x.df$INSTALLDT<-NULL
+    x.df$COMPANY<-NULL
+    x.df$TICKER<-NULL
+    
+    y.df<-ydata[,c("COMPANY_ID","INSTALLDT","Y_12M")]
+    y.df$COMPANY_ID<-NULL
+    y.df$INSTALLDT<-NULL
+    
+    xy.df<-merge(x.df,y.df,by="row.names")
+    rm(x.df,y.df)
+    row.names(xy.df)<-xy.df[,"Row.names"]
+    xy.df$Row.names<-NULL
+    
+    #remove missing y values
+    xy.df<-xy.df[complete.cases(xy.df),]
+    
+    rf1<-randomForest(Y_12M ~.,data=xy.df,ntree=150)
+    return(rf1)
+}
+
+for (i in 1:length(sipbInstallDates)){
     print(i)
     xdata<-create_xdata_file(i)
     save(xdata,file=paste(rdata.folder,"xdata",sipbInstallDates[i],".rdata",sep=""))
     ydata<-create_ydata_file(i)
     save(ydata,file=paste(rdata.folder,"ydata",sipbInstallDates[i],".rdata",sep=""))
+    #rf1<-CreateRF(xdata,ydata)
+    #save(rf1,file=paste(rdata.folder,"rf12M",sipbInstallDates[i],".rdata",sep=""))
 }
+rm(returns.monthly)
+
 library(beepr)
 beep(3)
+
+
+# for (i in 1:length(sipbInstallDates)){    
+#     print(i)
+#     load(paste(rdata.folder,"xdata",sipbInstallDates[i],".rdata",sep=""))
+#     load(paste(rdata.folder,"ydata",sipbInstallDates[i],".rdata",sep=""))
+#     x.df<-xdata
+#     x.df$COMPANY_ID<-NULL
+#     x.df$INSTALLDT<-NULL
+#     x.df$COMPANY<-NULL
+#     x.df$TICKER<-NULL
+#     
+#     y.df<-ydata[,c("COMPANY_ID","INSTALLDT","Y_12M")]
+#     y.df$COMPANY_ID<-NULL
+#     y.df$INSTALLDT<-NULL
+#     
+#     xy.df<-merge(x.df,y.df,by="row.names")
+#     rm(x.df,y.df)
+#     row.names(xy.df)<-xy.df[,"Row.names"]
+#     xy.df$Row.names<-NULL
+#     
+#     #remove missing y values
+#     xy.df<-xy.df[complete.cases(xy.df),]
+#     
+#     rf1<-randomForest(Y_12M ~.,data=xy.df,ntree=150)
+#     save(rf1,file=paste(rdata.folder,"rf12M",sipbInstallDates[i],".rdata",sep=""))
+# }
+
 # if (T){ 
 #     # build x & y training dataset for 200301 - 200712
 #     xtrain <- lapply(2:61,create_xdata_file)

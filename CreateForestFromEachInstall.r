@@ -1,28 +1,20 @@
-library(randomForest)
-setwd("C:/Users/Rex/Documents/Quant Trading/SMW")
-load("sipbInstallDates.rdata")
-rdata.folder <- "D:/SIPro/rdata/"
+yvar <- function(Y_M){
+    if (Y_M==1) return("Y_1M")
+    if (Y_M==3) return("Y_3M")
+    if (Y_M==6) return("Y_6M")
+    if (Y_M==12) return("Y_12M")
+}
 
-load(paste(rdata.folder,"xtrain.rdata",sep=""))
-load(paste(rdata.folder,"ytrain.rdata",sep=""))
-
-for (i in 1:length(xtrain)){
-    #    print(i)
-    x.df<-xtrain[[i]]
-    idx.dup<-duplicated(x.df)
-    x.df<-x.df[!idx.dup,]
-    rm(idx.dup)
-    row.names(x.df)<-paste(x.df[,"COMPANY_ID"],x.df[,"INSTALLDT"],sep="")
+CreateRF<-function(i){
+    load(paste(rdata.folder,"xdata",sipbInstallDates[i],".rdata",sep=""))
+    load(paste(rdata.folder,"ydata",sipbInstallDates[i],".rdata",sep=""))
+    x.df<-xdata
     x.df$COMPANY_ID<-NULL
     x.df$INSTALLDT<-NULL
     x.df$COMPANY<-NULL
     x.df$TICKER<-NULL
     
-    y.df<-ytrain[[i]][c("COMPANY_ID","INSTALLDT","Y_12M")]
-    idx.dup<-duplicated(y.df)
-    y.df<-y.df[!idx.dup,]
-    rm(idx.dup)
-    row.names(y.df)<-paste(y.df[,"COMPANY_ID"],y.df[,"INSTALLDT"],sep="")
+    y.df<-ydata[,c("COMPANY_ID","INSTALLDT",yvar(Y_M))]
     y.df$COMPANY_ID<-NULL
     y.df$INSTALLDT<-NULL
     
@@ -31,22 +23,29 @@ for (i in 1:length(xtrain)){
     row.names(xy.df)<-xy.df[,"Row.names"]
     xy.df$Row.names<-NULL
     
-    #fix SP variable
-    idx<-xy.df$SP=="NA"
-    levels(xy.df$SP) <- c(levels(xy.df$SP),"x")
-    xy.df$SP[idx]<-"x"  # replace NA with x
-    rm(idx)
     #remove missing y values
     xy.df<-xy.df[complete.cases(xy.df),]
-    xy.df$ADR<-factor(xy.df$ADR)
-    xy.df$OPTIONABLE<-factor(xy.df$OPTIONABLE)
-    for (v in names(xy.df)){  # replace infinites with median of other variables
-        if (typeof(xy.df[,v])=="double"){
-            idx<-is.infinite(xy.df[,v])
-            xy.df[idx,v]<-median(xy.df[!idx,v])
-        }
-    }
-
-    rf1<-randomForest(Y_12M ~.,data=xy.df,ntree=150)
-    save(rf1,file=paste(rdata.folder,"rf",sipbInstallDates[i],".rdata",sep=""))
+    if (Y_M==1) {rf1<-randomForest(Y_1M ~.,data=xy.df,ntree=150)}
+    if (Y_M==3) {rf1<-randomForest(Y_3M ~.,data=xy.df,ntree=150)}
+    if (Y_M==6) {rf1<-randomForest(Y_6M ~.,data=xy.df,ntree=150)}
+    if (Y_M==12) {rf1<-randomForest(Y_12M ~.,data=xy.df,ntree=150)}
+    return(rf1)
 }
+
+create_forest_from_each_install<-function(Y_M=1){
+    library(randomForest)
+    setwd("C:/Users/Rex/Documents/Quant Trading/SMW")
+    load("sipbInstallDates.rdata")
+    rdata.folder <- "D:/SIPro/rdata/"
+    
+    for (i in 1:(length(sipbInstallDates)-Y_M)){
+        print(i)
+        rf1<-CreateRF(i)
+        save(rf1,file=paste(rdata.folder,"rf",Y_M,"M",sipbInstallDates[i],".rdata",sep=""))
+    }
+}
+
+#create_forest_from_each_install(1)
+create_forest_from_each_install(3)
+create_forest_from_each_install(6)
+#create_forest_from_each_install(12)
