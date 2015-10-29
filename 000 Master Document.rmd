@@ -1,0 +1,11 @@
+---
+title: "SMW Documentation"
+author: "[Rex Macey](mailto:rex@macey.us)"
+date: "October 29, 2015"
+output: html_document
+---
+This document contains link to the other documentation in order.
+
+*[Introduction](001.0_Introduction_to_SMW.html)
+
+*[Data Source](002.0_Data_Source.html)
