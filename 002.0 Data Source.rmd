@@ -1,0 +1,24 @@
+---
+title: "002.0 Data Source"
+author: "[Rex Macey](mailto:rex@macey.us)"
+date: "October 29, 2015"
+output: html_document
+---
+*Summary: AAII Stock Investor Pro is the primary data source. It includes data on over 8,000 U.S. companies (and ADRs). The data begins in 2003.*
+
+The stock data come from the American Association of Individual Investor's Stock Investor Pro (SIP) software.  I've had a lifetime membership to the AAII for many years.  For the additional, but more than reasonable price of $198/yr, one can license SIP.  What makes this source valuable is that it is survivorship-bias free historical data.  Subscribers have access to the old software and data as it was when it was distributed going back to 2003.  The data include balance sheet, income statement, cash flow, price, and many calculated fields. The [list of fields](https://www.aaii.com/files/sipro/Stock%20Investor%20Pro%20Field%20List.pdf) runs to 22 pages. In 2003, over 8,500 companies were covered.
+
+For info on SIP, check out the [AAII](www.aaii.com) webpage and this [presentation](http://www.aaii.com/files/presentations/2011/20%20Joe%20Lan%20-%20Introduction%20to%20Stock%20Investor%20Pro.pdf). 
+I downloaded about 150 install files from the AAII [archives](http://www.aaii.com/stock-investor-pro/archives) page site access to which requires membership ($29) and a subscription.  I installed them one by one putting each into its own directory.  I downloaded the month-end updates though weekly data was sometime available.  I watched an entire season of Friends while doing this and probably lost three IQ points. Because this is licensed data, I am not making the raw data available on Github.
+
+The AAII data files are in a Foxpro/DBF format.  Fortunately R has the [read.dbf](https://stat.ethz.ch/R-manual/R-devel/library/foreign/html/read.dbf.html) function in the foreign package to handle this. 
+
+**Biases in the data**
+
+*Suvivorship - The AAII data itself is free of survivorship bias in that it includes companies that have disappeared. This should be clear because we are using the data made available historically as it was available then.  That is the January 31, 2003 data is just as AAII released it then.  I introduce some bias here as I wrangle the data.  Specifically, when I create the Y (dependent) variables which are future returns, I struggle with companies that disappear before the evaluation horizon. For example, if working with data from the end of June 2003, I look at the September 2003 file to calculate the 3 month return.  If a company in June is not in September then I use August (and July if it's not in August).  These data files only have monthly data so the future return calculations are problematic when companies disappear.
+
+*Look-ahead - The data in the AAII files are the data that existed at the time of their release so AAII is not committing any look-ahead bias.  However, I use the month-end data files.  These may not be available exactly at the month end. I'm assuming buys and sells at month even though the AAII data is not available then.
+
+**Code Reference**
+
+convertdbf2rdata.r converts the dbf files to rdata files.
