@@ -30,76 +30,7 @@ subforna<-function(x,subval){
     }
     return(x)
 }
-
-create_ydata_file<-function(InstallNum=1){
-    # create a file with 1,3 6, and 12 month future returns to serve as dependent variable
-    # this will be saved and later combined with x data
-    print(paste("create_ydata_file",InstallNum))
-    if (InstallNum>length(sipbInstallDates)) return(NA)
-    strDate<-sipbInstallDates[InstallNum]
-    if (!exists("returns.monthly")) load(paste(rdata.folder,"returnsmonthly.rdata",sep=""))
-    #si_ci_flds <- "COMPANY_ID, TICKER, COMPANY, ADR, SIC, IND_2_DIG, IND_3_DIG, OPTIONABLE, SP, EXCHANGE"  # field names must be delimited by a comma AND a space    
-    si_ci_flds <- "COMPANY_ID, TICKER"
-    out <- load_fields_from_file("si_ci",rdata.folder,strDate,si_ci_flds)
-    # convert appropriate variables to factors
-    #Get the next 1 month return
-    ret<-yret(InstallNum,1,"Y_1M")
-    if ((InstallNum+1)>length(sipbInstallDates)){
-        out$Y_1M<-NA
-    } else {
-        out<-merge(out,ret,by="COMPANY_ID",all.x=T)    
-    }
-    #Get the next 3 month return
-    ret<-yret(InstallNum,3,"Y_3M")
-    if ((InstallNum+3)>length(sipbInstallDates)){
-        out$Y_3M<-NA
-    } else {
-        out<-merge(out,ret,by="COMPANY_ID",all.x = T)        
-    }
-    # all.x=T keep companies that pass but don't have returns (avoid suvivorship bias)
-    ret<-yret(InstallNum,6,"Y_6M")
-    if ((InstallNum+6)>length(sipbInstallDates)){
-        out$Y_6M<-NA
-    } else {
-        out<-merge(out,ret,by="COMPANY_ID",all.x = T)    
-    }
-    ret<-yret(InstallNum,12,"Y_12M")
-    if ((InstallNum+12)>length(sipbInstallDates)){
-        out$Y_12M<-NA
-    } else {
-        out<-merge(out,ret,by="COMPANY_ID",all.x = T)    
-    }
-    out$INSTALLDT <- strDate
-#     idx.dup<-duplicated(out)
-#     out<-out[!idx.dup,]
-#     row.names(out)<-paste(out[,"COMPANY_ID"],out[,"INSTALLDT"],sep="")
-    
-    out2<-out[,c("COMPANY_ID","INSTALLDT")]
-    idx.dup<-duplicated(out2)
-    out<-out[!idx.dup,]
-    row.names(out)<-paste(out[,"COMPANY_ID"],out[,"INSTALLDT"],sep="")
-    
-    return(out)
-}  
-
-field_count<-function(strDate="20030131"){ # counts the fields in the various data files
-    rdata.folder <- "D:/SIPro/rdata/"
-    df <- load_fields_from_file("si_ci",rdata.folder,strDate)
-    n<-ncol(df)
-    df <- load_fields_from_file("si_mlt",rdata.folder,strDate)
-    n<-n+ncol(df)
-    df <- load_fields_from_file("si_gr",rdata.folder,strDate)
-    n<-n+ncol(df)
-    df <- load_fields_from_file("si_rat",rdata.folder,strDate)
-    n<-n+ncol(df)
-    df <- load_fields_from_file("si_psd",rdata.folder,strDate)
-    n<-n+ncol(df)
-    df <- load_fields_from_file("si_ee",rdata.folder,strDate)
-    n<-n+ncol(df)
-    df <- load_fields_from_file("si_perc",rdata.folder,strDate)
-    n<-n+ncol(df)
-    return(n)
-}
+  
 
 get_si_selected_fld_list<-function(){ 
     # This function exists to put all x fields extracted from SI DBF in one place and to make
@@ -223,126 +154,126 @@ get_ci_data<-function(strDate){ # get company information from sip data files
     
     return(out)  # in x exclude TICKER, COMPANY
 }
-get_mlt_data<-function(strDate){ # get multiples data from sip data files
+get_mlt_data<-function(strDate,NAvalue=NA){ # get multiples data from sip data files
     si_mlt_flds <- get_si_selected_fld_list()[["mlt"]] # these are fields in first data file so fields added later won't be a problem
     si_mlt<-load_fields_from_file("si_mlt",rdata.folder,strDate,si_mlt_flds)
     # calculate new features
-    si_mlt$PEv1T <- subforna(si_mlt$PE / si_mlt$PE_1T,"median")
-    si_mlt$PEvA3Y <- subforna(si_mlt$PE / si_mlt$PE_A3Y,"median")
-    si_mlt$PEvA5Y <- subforna(si_mlt$PE / si_mlt$PE_A5Y,"median")
-    si_mlt$PEvA7Y <- subforna(si_mlt$PE / si_mlt$PE_A7Y,"median")
-    si_mlt$PEvA_Y1 <- subforna(si_mlt$PE / si_mlt$PEA_Y1,"median")
-    si_mlt$PEvA_Y2 <- subforna(si_mlt$PE / si_mlt$PEA_Y2,"median")
-    si_mlt$PEvA_Y3 <- subforna(si_mlt$PE / si_mlt$PEA_Y3,"median")
-    si_mlt$PEvA_Y4 <- subforna(si_mlt$PE / si_mlt$PEA_Y4,"median")
-    si_mlt$PEvA_Y5 <- subforna(si_mlt$PE / si_mlt$PEA_Y5,"median")
-    si_mlt$PEvA_Y6 <- subforna(si_mlt$PE / si_mlt$PEA_Y6,"median")
-    si_mlt$PEvA_Y7 <- subforna(si_mlt$PE / si_mlt$PEA_Y7,"median")
-    si_mlt$PEvH_A3Y <- subforna(si_mlt$PE / si_mlt$PEH_A3Y,"median")
-    si_mlt$PEvH_A5Y <- subforna(si_mlt$PE / si_mlt$PEH_A5Y,"median")
-    si_mlt$PEvH_A7Y <- subforna(si_mlt$PE / si_mlt$PEH_A7Y,"median")
-    si_mlt$PEvL_A3Y <- subforna(si_mlt$PE / si_mlt$PEL_A3Y,"median")
-    si_mlt$PEvL_A5Y <- subforna(si_mlt$PE / si_mlt$PEL_A5Y,"median")
-    si_mlt$PEvL_A7Y <- subforna(si_mlt$PE / si_mlt$PEL_A7Y,"median")
-    si_mlt$PE <-subforna(si_mlt$PE,"median")
+    si_mlt$PEv1T <- subforna(si_mlt$PE / si_mlt$PE_1T,NAvalue)
+    si_mlt$PEvA3Y <- subforna(si_mlt$PE / si_mlt$PE_A3Y,NAvalue)
+    si_mlt$PEvA5Y <- subforna(si_mlt$PE / si_mlt$PE_A5Y,NAvalue)
+    si_mlt$PEvA7Y <- subforna(si_mlt$PE / si_mlt$PE_A7Y,NAvalue)
+    si_mlt$PEvA_Y1 <- subforna(si_mlt$PE / si_mlt$PEA_Y1,NAvalue)
+    si_mlt$PEvA_Y2 <- subforna(si_mlt$PE / si_mlt$PEA_Y2,NAvalue)
+    si_mlt$PEvA_Y3 <- subforna(si_mlt$PE / si_mlt$PEA_Y3,NAvalue)
+    si_mlt$PEvA_Y4 <- subforna(si_mlt$PE / si_mlt$PEA_Y4,NAvalue)
+    si_mlt$PEvA_Y5 <- subforna(si_mlt$PE / si_mlt$PEA_Y5,NAvalue)
+    si_mlt$PEvA_Y6 <- subforna(si_mlt$PE / si_mlt$PEA_Y6,NAvalue)
+    si_mlt$PEvA_Y7 <- subforna(si_mlt$PE / si_mlt$PEA_Y7,NAvalue)
+    si_mlt$PEvH_A3Y <- subforna(si_mlt$PE / si_mlt$PEH_A3Y,NAvalue)
+    si_mlt$PEvH_A5Y <- subforna(si_mlt$PE / si_mlt$PEH_A5Y,NAvalue)
+    si_mlt$PEvH_A7Y <- subforna(si_mlt$PE / si_mlt$PEH_A7Y,NAvalue)
+    si_mlt$PEvL_A3Y <- subforna(si_mlt$PE / si_mlt$PEL_A3Y,NAvalue)
+    si_mlt$PEvL_A5Y <- subforna(si_mlt$PE / si_mlt$PEL_A5Y,NAvalue)
+    si_mlt$PEvL_A7Y <- subforna(si_mlt$PE / si_mlt$PEL_A7Y,NAvalue)
+    si_mlt$PE <-subforna(si_mlt$PE,NAvalue)
     
-    si_mlt$PBVPSv1T <- subforna(si_mlt$PBVPS / si_mlt$PBVPS_1T,"median")
-    si_mlt$PBVPSvA3Y <- subforna(si_mlt$PBVPS / si_mlt$PBVPS_A3Y,"median")
-    si_mlt$PBVPSvA5Y <- subforna(si_mlt$PBVPS / si_mlt$PBVPS_A5Y,"median")
-    si_mlt$PBVPSvA7Y <- subforna(si_mlt$PBVPS / si_mlt$PBVPS_A7Y,"median")
-    si_mlt$PBVPSvA_Y1 <- subforna(si_mlt$PBVPS / si_mlt$PBVPSA_Y1,"median")
-    si_mlt$PBVPSvA_Y2 <- subforna(si_mlt$PBVPS / si_mlt$PBVPSA_Y2,"median")
-    si_mlt$PBVPSvA_Y3 <- subforna(si_mlt$PBVPS / si_mlt$PBVPSA_Y3,"median")
-    si_mlt$PBVPSvA_Y4 <- subforna(si_mlt$PBVPS / si_mlt$PBVPSA_Y4,"median")
-    si_mlt$PBVPSvA_Y5 <- subforna(si_mlt$PBVPS / si_mlt$PBVPSA_Y5,"median")
-    si_mlt$PBVPSvA_Y6 <- subforna(si_mlt$PBVPS / si_mlt$PBVPSA_Y6,"median")
-    si_mlt$PBVPSvA_Y7 <- subforna(si_mlt$PBVPS / si_mlt$PBVPSA_Y7,"median")
-    si_mlt$PBVPS<-subforna(si_mlt$PBVPS,"median")
+    si_mlt$PBVPSv1T <- subforna(si_mlt$PBVPS / si_mlt$PBVPS_1T,NAvalue)
+    si_mlt$PBVPSvA3Y <- subforna(si_mlt$PBVPS / si_mlt$PBVPS_A3Y,NAvalue)
+    si_mlt$PBVPSvA5Y <- subforna(si_mlt$PBVPS / si_mlt$PBVPS_A5Y,NAvalue)
+    si_mlt$PBVPSvA7Y <- subforna(si_mlt$PBVPS / si_mlt$PBVPS_A7Y,NAvalue)
+    si_mlt$PBVPSvA_Y1 <- subforna(si_mlt$PBVPS / si_mlt$PBVPSA_Y1,NAvalue)
+    si_mlt$PBVPSvA_Y2 <- subforna(si_mlt$PBVPS / si_mlt$PBVPSA_Y2,NAvalue)
+    si_mlt$PBVPSvA_Y3 <- subforna(si_mlt$PBVPS / si_mlt$PBVPSA_Y3,NAvalue)
+    si_mlt$PBVPSvA_Y4 <- subforna(si_mlt$PBVPS / si_mlt$PBVPSA_Y4,NAvalue)
+    si_mlt$PBVPSvA_Y5 <- subforna(si_mlt$PBVPS / si_mlt$PBVPSA_Y5,NAvalue)
+    si_mlt$PBVPSvA_Y6 <- subforna(si_mlt$PBVPS / si_mlt$PBVPSA_Y6,NAvalue)
+    si_mlt$PBVPSvA_Y7 <- subforna(si_mlt$PBVPS / si_mlt$PBVPSA_Y7,NAvalue)
+    si_mlt$PBVPS<-subforna(si_mlt$PBVPS,NAvalue)
     
-    si_mlt$PSPSv1T <- subforna(si_mlt$PSPS / si_mlt$PSPS_1T,"median")
-    si_mlt$PSPSvA3Y <- subforna(si_mlt$PSPS / si_mlt$PSPS_A3Y,"median")
-    si_mlt$PSPSvA5Y <- subforna(si_mlt$PSPS / si_mlt$PSPS_A5Y,"median")
-    si_mlt$PSPSvA7Y <- subforna(si_mlt$PSPS / si_mlt$PSPS_A7Y,"median")
-    si_mlt$PSPSvA_Y1 <- subforna(si_mlt$PSPS / si_mlt$PSPSA_Y1,"median")
-    si_mlt$PSPSvA_Y2 <- subforna(si_mlt$PSPS / si_mlt$PSPSA_Y2,"median")
-    si_mlt$PSPSvA_Y3 <- subforna(si_mlt$PSPS / si_mlt$PSPSA_Y3,"median")
-    si_mlt$PSPSvA_Y4 <- subforna(si_mlt$PSPS / si_mlt$PSPSA_Y4,"median")
-    si_mlt$PSPSvA_Y5 <- subforna(si_mlt$PSPS / si_mlt$PSPSA_Y5,"median")
-    si_mlt$PSPSvA_Y6 <- subforna(si_mlt$PSPS / si_mlt$PSPSA_Y6,"median")
-    si_mlt$PSPSvA_Y7 <- subforna(si_mlt$PSPS / si_mlt$PSPSA_Y7,"median")
-    si_mlt$PSPS<-subforna(si_mlt$PSPS,"median")
+    si_mlt$PSPSv1T <- subforna(si_mlt$PSPS / si_mlt$PSPS_1T,NAvalue)
+    si_mlt$PSPSvA3Y <- subforna(si_mlt$PSPS / si_mlt$PSPS_A3Y,NAvalue)
+    si_mlt$PSPSvA5Y <- subforna(si_mlt$PSPS / si_mlt$PSPS_A5Y,NAvalue)
+    si_mlt$PSPSvA7Y <- subforna(si_mlt$PSPS / si_mlt$PSPS_A7Y,NAvalue)
+    si_mlt$PSPSvA_Y1 <- subforna(si_mlt$PSPS / si_mlt$PSPSA_Y1,NAvalue)
+    si_mlt$PSPSvA_Y2 <- subforna(si_mlt$PSPS / si_mlt$PSPSA_Y2,NAvalue)
+    si_mlt$PSPSvA_Y3 <- subforna(si_mlt$PSPS / si_mlt$PSPSA_Y3,NAvalue)
+    si_mlt$PSPSvA_Y4 <- subforna(si_mlt$PSPS / si_mlt$PSPSA_Y4,NAvalue)
+    si_mlt$PSPSvA_Y5 <- subforna(si_mlt$PSPS / si_mlt$PSPSA_Y5,NAvalue)
+    si_mlt$PSPSvA_Y6 <- subforna(si_mlt$PSPS / si_mlt$PSPSA_Y6,NAvalue)
+    si_mlt$PSPSvA_Y7 <- subforna(si_mlt$PSPS / si_mlt$PSPSA_Y7,NAvalue)
+    si_mlt$PSPS<-subforna(si_mlt$PSPS,NAvalue)
     
-    si_mlt$PCFPSv1T <- subforna(si_mlt$PCFPS / si_mlt$PCFPS_1T,"median")
-    si_mlt$PCFPSvA3Y <- subforna(si_mlt$PCFPS / si_mlt$PCFPS_A3Y,"median")
-    si_mlt$PCFPSvA5Y <- subforna(si_mlt$PCFPS / si_mlt$PCFPS_A5Y,"median")
-    si_mlt$PCFPSvA7Y <- subforna(si_mlt$PCFPS / si_mlt$PCFPS_A7Y,"median")
-    si_mlt$PCFPSvA_Y1 <- subforna(si_mlt$PCFPS / si_mlt$PCFPSA_Y1,"median")
-    si_mlt$PCFPSvA_Y2 <- subforna(si_mlt$PCFPS / si_mlt$PCFPSA_Y2,"median")
-    si_mlt$PCFPSvA_Y3 <- subforna(si_mlt$PCFPS / si_mlt$PCFPSA_Y3,"median")
-    si_mlt$PCFPSvA_Y4 <- subforna(si_mlt$PCFPS / si_mlt$PCFPSA_Y4,"median")
-    si_mlt$PCFPSvA_Y5 <- subforna(si_mlt$PCFPS / si_mlt$PCFPSA_Y5,"median")
-    si_mlt$PCFPSvA_Y6 <- subforna(si_mlt$PCFPS / si_mlt$PCFPSA_Y6,"median")
-    si_mlt$PCFPSvA_Y7 <- subforna(si_mlt$PCFPS / si_mlt$PCFPSA_Y7,"median")
-    si_mlt$PCFPS<-subforna(si_mlt$PCFPS,"median")
+    si_mlt$PCFPSv1T <- subforna(si_mlt$PCFPS / si_mlt$PCFPS_1T,NAvalue)
+    si_mlt$PCFPSvA3Y <- subforna(si_mlt$PCFPS / si_mlt$PCFPS_A3Y,NAvalue)
+    si_mlt$PCFPSvA5Y <- subforna(si_mlt$PCFPS / si_mlt$PCFPS_A5Y,NAvalue)
+    si_mlt$PCFPSvA7Y <- subforna(si_mlt$PCFPS / si_mlt$PCFPS_A7Y,NAvalue)
+    si_mlt$PCFPSvA_Y1 <- subforna(si_mlt$PCFPS / si_mlt$PCFPSA_Y1,NAvalue)
+    si_mlt$PCFPSvA_Y2 <- subforna(si_mlt$PCFPS / si_mlt$PCFPSA_Y2,NAvalue)
+    si_mlt$PCFPSvA_Y3 <- subforna(si_mlt$PCFPS / si_mlt$PCFPSA_Y3,NAvalue)
+    si_mlt$PCFPSvA_Y4 <- subforna(si_mlt$PCFPS / si_mlt$PCFPSA_Y4,NAvalue)
+    si_mlt$PCFPSvA_Y5 <- subforna(si_mlt$PCFPS / si_mlt$PCFPSA_Y5,NAvalue)
+    si_mlt$PCFPSvA_Y6 <- subforna(si_mlt$PCFPS / si_mlt$PCFPSA_Y6,NAvalue)
+    si_mlt$PCFPSvA_Y7 <- subforna(si_mlt$PCFPS / si_mlt$PCFPSA_Y7,NAvalue)
+    si_mlt$PCFPS<-subforna(si_mlt$PCFPS,NAvalue)
     
-    si_mlt$PFCPSv1T <- subforna(si_mlt$PFCPS / si_mlt$PFCPS_1T,"median")
-    si_mlt$PFCPSvA3Y <- subforna(si_mlt$PFCPS / si_mlt$PFCPS_A3Y,"median")
-    si_mlt$PFCPSvA5Y <- subforna(si_mlt$PFCPS / si_mlt$PFCPS_A5Y,"median")
-    si_mlt$PFCPSvA7Y <- subforna(si_mlt$PFCPS / si_mlt$PFCPS_A7Y,"median")
-    si_mlt$PFCPSvA_Y1 <- subforna(si_mlt$PFCPS / si_mlt$PFCPSA_Y1,"median")
-    si_mlt$PFCPSvA_Y2 <- subforna(si_mlt$PFCPS / si_mlt$PFCPSA_Y2,"median")
-    si_mlt$PFCPSvA_Y3 <- subforna(si_mlt$PFCPS / si_mlt$PFCPSA_Y3,"median")
-    si_mlt$PFCPSvA_Y4 <- subforna(si_mlt$PFCPS / si_mlt$PFCPSA_Y4,"median")
-    si_mlt$PFCPSvA_Y5 <- subforna(si_mlt$PFCPS / si_mlt$PFCPSA_Y5,"median")
-    si_mlt$PFCPSvA_Y6 <- subforna(si_mlt$PFCPS / si_mlt$PFCPSA_Y6,"median")
-    si_mlt$PFCPSvA_Y7 <- subforna(si_mlt$PFCPS / si_mlt$PFCPSA_Y7,"median")
-    si_mlt$PFCPS<-subforna(si_mlt$PFCPS,"median")
+    si_mlt$PFCPSv1T <- subforna(si_mlt$PFCPS / si_mlt$PFCPS_1T,NAvalue)
+    si_mlt$PFCPSvA3Y <- subforna(si_mlt$PFCPS / si_mlt$PFCPS_A3Y,NAvalue)
+    si_mlt$PFCPSvA5Y <- subforna(si_mlt$PFCPS / si_mlt$PFCPS_A5Y,NAvalue)
+    si_mlt$PFCPSvA7Y <- subforna(si_mlt$PFCPS / si_mlt$PFCPS_A7Y,NAvalue)
+    si_mlt$PFCPSvA_Y1 <- subforna(si_mlt$PFCPS / si_mlt$PFCPSA_Y1,NAvalue)
+    si_mlt$PFCPSvA_Y2 <- subforna(si_mlt$PFCPS / si_mlt$PFCPSA_Y2,NAvalue)
+    si_mlt$PFCPSvA_Y3 <- subforna(si_mlt$PFCPS / si_mlt$PFCPSA_Y3,NAvalue)
+    si_mlt$PFCPSvA_Y4 <- subforna(si_mlt$PFCPS / si_mlt$PFCPSA_Y4,NAvalue)
+    si_mlt$PFCPSvA_Y5 <- subforna(si_mlt$PFCPS / si_mlt$PFCPSA_Y5,NAvalue)
+    si_mlt$PFCPSvA_Y6 <- subforna(si_mlt$PFCPS / si_mlt$PFCPSA_Y6,NAvalue)
+    si_mlt$PFCPSvA_Y7 <- subforna(si_mlt$PFCPS / si_mlt$PFCPSA_Y7,NAvalue)
+    si_mlt$PFCPS<-subforna(si_mlt$PFCPS,NAvalue)
     
-    si_mlt$YIELDv1T <- subforna(si_mlt$YIELD / si_mlt$YIELD_1T,"median")
-    si_mlt$YIELDvA3Y <- subforna(si_mlt$YIELD / si_mlt$YIELD_A3Y,"median")
-    si_mlt$YIELDvA5Y <- subforna(si_mlt$YIELD / si_mlt$YIELD_A5Y,"median")
-    si_mlt$YIELDvA7Y <- subforna(si_mlt$YIELD / si_mlt$YIELD_A7Y,"median")
-    si_mlt$YIELDvA_Y1 <- subforna(si_mlt$YIELD / si_mlt$YIELDA_Y1,"median")
-    si_mlt$YIELDvA_Y2 <- subforna(si_mlt$YIELD / si_mlt$YIELDA_Y2,"median")
-    si_mlt$YIELDvA_Y3 <- subforna(si_mlt$YIELD / si_mlt$YIELDA_Y3,"median")
-    si_mlt$YIELDvA_Y4 <- subforna(si_mlt$YIELD / si_mlt$YIELDA_Y4,"median")
-    si_mlt$YIELDvA_Y5 <- subforna(si_mlt$YIELD / si_mlt$YIELDA_Y5,"median")
-    si_mlt$YIELDvA_Y6 <- subforna(si_mlt$YIELD / si_mlt$YIELDA_Y6,"median")
-    si_mlt$YIELDvA_Y7 <- subforna(si_mlt$YIELD / si_mlt$YIELDA_Y7,"median")
-    si_mlt$YIELD<-subforna(si_mlt$YIELD,"median")
+    si_mlt$YIELDv1T <- subforna(si_mlt$YIELD / si_mlt$YIELD_1T,NAvalue)
+    si_mlt$YIELDvA3Y <- subforna(si_mlt$YIELD / si_mlt$YIELD_A3Y,NAvalue)
+    si_mlt$YIELDvA5Y <- subforna(si_mlt$YIELD / si_mlt$YIELD_A5Y,NAvalue)
+    si_mlt$YIELDvA7Y <- subforna(si_mlt$YIELD / si_mlt$YIELD_A7Y,NAvalue)
+    si_mlt$YIELDvA_Y1 <- subforna(si_mlt$YIELD / si_mlt$YIELDA_Y1,NAvalue)
+    si_mlt$YIELDvA_Y2 <- subforna(si_mlt$YIELD / si_mlt$YIELDA_Y2,NAvalue)
+    si_mlt$YIELDvA_Y3 <- subforna(si_mlt$YIELD / si_mlt$YIELDA_Y3,NAvalue)
+    si_mlt$YIELDvA_Y4 <- subforna(si_mlt$YIELD / si_mlt$YIELDA_Y4,NAvalue)
+    si_mlt$YIELDvA_Y5 <- subforna(si_mlt$YIELD / si_mlt$YIELDA_Y5,NAvalue)
+    si_mlt$YIELDvA_Y6 <- subforna(si_mlt$YIELD / si_mlt$YIELDA_Y6,NAvalue)
+    si_mlt$YIELDvA_Y7 <- subforna(si_mlt$YIELD / si_mlt$YIELDA_Y7,NAvalue)
+    si_mlt$YIELD<-subforna(si_mlt$YIELD,NAvalue)
     
-    si_mlt$PE_TO_G5F<-subforna(si_mlt$PE_TO_G5F,"median")
-    si_mlt$PE_TO_G5E<-subforna(si_mlt$PE_TO_G5E,"median")
-    si_mlt$PE_TO_DG5F<-subforna(si_mlt$PE_TO_DG5F,"median")
-    si_mlt$PE_AEPS3Y<-subforna(si_mlt$PE_AEPS3Y,"median")
-    si_mlt$PGFPS<-subforna(si_mlt$PGFPS,"median")
-    si_mlt$IW_RV<-subforna(si_mlt$IW_RV,"median")
-    si_mlt$IW_EYIELD<-subforna(si_mlt$IW_EYIELD,"median")
-    si_mlt$PE_TO_YG5E<-subforna(si_mlt$PE_TO_YG5E,"median")
-    si_mlt$EYIELD_12M<-subforna(si_mlt$EYIELD_12M,"median")
-    si_mlt$THUMB<-subforna(si_mlt$THUMB,"median")
-    si_mlt$PEH_Y1<-subforna(si_mlt$PEH_Y1,"median")
-    si_mlt$PEH_Y2<-subforna(si_mlt$PEH_Y2,"median")
-    si_mlt$PEH_Y3<-subforna(si_mlt$PEH_Y3,"median")
-    si_mlt$PEH_Y4<-subforna(si_mlt$PEH_Y4,"median")
-    si_mlt$PEH_Y5<-subforna(si_mlt$PEH_Y5,"median")
-    si_mlt$PEL_Y1<-subforna(si_mlt$PEL_Y1,"median")
-    si_mlt$PEL_Y2<-subforna(si_mlt$PEL_Y2,"median")
-    si_mlt$PEL_Y3<-subforna(si_mlt$PEL_Y3,"median")
-    si_mlt$PEL_Y4<-subforna(si_mlt$PEL_Y4,"median")
-    si_mlt$PEL_Y5<-subforna(si_mlt$PEL_Y5,"median")
-    si_mlt$PERH_A5Y<-subforna(si_mlt$PERH_A5Y,"median")
-    si_mlt$PERL_A5Y<-subforna(si_mlt$PERL_A5Y,"median")
-    si_mlt$PERA_5Y<-subforna(si_mlt$PERA_5Y,"median")
-    si_mlt$PERV<-subforna(si_mlt$PERV,"median")
-    si_mlt$PERVP<-subforna(si_mlt$PERVP,"median")
-    si_mlt$PERAPE<-subforna(si_mlt$PERAPE,"median")
-    si_mlt$YIELDH_A7Y<-subforna(si_mlt$YIELDH_A7Y,"median")
-    si_mlt$PF_TO_F_GR<-subforna(si_mlt$PF_TO_F_GR,"median")
+    si_mlt$PE_TO_G5F<-subforna(si_mlt$PE_TO_G5F,NAvalue)
+    si_mlt$PE_TO_G5E<-subforna(si_mlt$PE_TO_G5E,NAvalue)
+    si_mlt$PE_TO_DG5F<-subforna(si_mlt$PE_TO_DG5F,NAvalue)
+    si_mlt$PE_AEPS3Y<-subforna(si_mlt$PE_AEPS3Y,NAvalue)
+    si_mlt$PGFPS<-subforna(si_mlt$PGFPS,NAvalue)
+    si_mlt$IW_RV<-subforna(si_mlt$IW_RV,NAvalue)
+    si_mlt$IW_EYIELD<-subforna(si_mlt$IW_EYIELD,NAvalue)
+    si_mlt$PE_TO_YG5E<-subforna(si_mlt$PE_TO_YG5E,NAvalue)
+    si_mlt$EYIELD_12M<-subforna(si_mlt$EYIELD_12M,NAvalue)
+    si_mlt$THUMB<-subforna(si_mlt$THUMB,NAvalue)
+    si_mlt$PEH_Y1<-subforna(si_mlt$PEH_Y1,NAvalue)
+    si_mlt$PEH_Y2<-subforna(si_mlt$PEH_Y2,NAvalue)
+    si_mlt$PEH_Y3<-subforna(si_mlt$PEH_Y3,NAvalue)
+    si_mlt$PEH_Y4<-subforna(si_mlt$PEH_Y4,NAvalue)
+    si_mlt$PEH_Y5<-subforna(si_mlt$PEH_Y5,NAvalue)
+    si_mlt$PEL_Y1<-subforna(si_mlt$PEL_Y1,NAvalue)
+    si_mlt$PEL_Y2<-subforna(si_mlt$PEL_Y2,NAvalue)
+    si_mlt$PEL_Y3<-subforna(si_mlt$PEL_Y3,NAvalue)
+    si_mlt$PEL_Y4<-subforna(si_mlt$PEL_Y4,NAvalue)
+    si_mlt$PEL_Y5<-subforna(si_mlt$PEL_Y5,NAvalue)
+    si_mlt$PERH_A5Y<-subforna(si_mlt$PERH_A5Y,NAvalue)
+    si_mlt$PERL_A5Y<-subforna(si_mlt$PERL_A5Y,NAvalue)
+    si_mlt$PERA_5Y<-subforna(si_mlt$PERA_5Y,NAvalue)
+    si_mlt$PERV<-subforna(si_mlt$PERV,NAvalue)
+    si_mlt$PERVP<-subforna(si_mlt$PERVP,NAvalue)
+    si_mlt$PERAPE<-subforna(si_mlt$PERAPE,NAvalue)
+    si_mlt$YIELDH_A7Y<-subforna(si_mlt$YIELDH_A7Y,NAvalue)
+    si_mlt$PF_TO_F_GR<-subforna(si_mlt$PF_TO_F_GR,NAvalue)
     
-    si_mlt$PE_EY0<-subforna(si_mlt$PE_EY0,"median")
-    si_mlt$PE_EY1<-subforna(si_mlt$PE_EY1,"median")
-    si_mlt$PE_EY2<-subforna(si_mlt$PE_EY2,"median")
+    si_mlt$PE_EY0<-subforna(si_mlt$PE_EY0,NAvalue)
+    si_mlt$PE_EY1<-subforna(si_mlt$PE_EY1,NAvalue)
+    si_mlt$PE_EY2<-subforna(si_mlt$PE_EY2,NAvalue)
     
     # remove unwanted fields that were used to calculate new features
     for (x in c("PE_1T","PE_A3Y","PE_A5Y","PE_A7Y","PEA_Y1","PEA_Y2","PEA_Y3","PEA_Y4",
@@ -362,190 +293,190 @@ get_mlt_data<-function(strDate){ # get multiples data from sip data files
     }
     return(si_mlt)
 }
-get_gr_data<-function(strDate){ # get growth data from sip data files
+get_gr_data<-function(strDate,NAvalue=NA){ # get growth data from sip data files
     si_gr_flds<-get_si_selected_fld_list()[["gr"]]
     si_gr<-load_fields_from_file("si_gr",rdata.folder,strDate,si_gr_flds)
     for (i in 1:ncol(si_gr)){
-        si_gr[,i]<-subforna(si_gr[,i],"median")
+        si_gr[,i]<-subforna(si_gr[,i],NAvalue)
     }
     return(si_gr)
 }
-get_rat_data<-function(strDate){ # get ratio data from sip files
+get_rat_data<-function(strDate,NAvalue=NA){ # get ratio data from sip files
     si_rat_flds <-get_si_selected_fld_list()[["rat"]]
     out<-load_fields_from_file("si_rat",rdata.folder,strDate,si_rat_flds)
     
-    out$ARTURN_12M_Y1 <- subforna(out$ARTURN_12M - out$ARTURN_Y1,"median")
-    out$ARTURN_12M_Y2 <- subforna(out$ARTURN_12M - out$ARTURN_Y2,"median")
-    out$ARTURN_12M_Y3 <- subforna(out$ARTURN_12M - out$ARTURN_Y3,"median")
-    out$ARTURN_12M_Y4 <- subforna(out$ARTURN_12M - out$ARTURN_Y4,"median")
-    out$ARTURN_12M_Y5 <- subforna(out$ARTURN_12M - out$ARTURN_Y5,"median")
-    out$ARTURN_12M_Y6 <- subforna(out$ARTURN_12M - out$ARTURN_Y6,"median")
-    out$ARTURN_12M_Y7 <- subforna(out$ARTURN_12M - out$ARTURN_Y7,"median")
-    out$ARTURN_12M <- subforna(out$ARTURN_12M,"median")
-    out$ARTURN_Y1 <- subforna(out$ARTURN_Y1,"median")
+    out$ARTURN_12M_Y1 <- subforna(out$ARTURN_12M - out$ARTURN_Y1,NAvalue)
+    out$ARTURN_12M_Y2 <- subforna(out$ARTURN_12M - out$ARTURN_Y2,NAvalue)
+    out$ARTURN_12M_Y3 <- subforna(out$ARTURN_12M - out$ARTURN_Y3,NAvalue)
+    out$ARTURN_12M_Y4 <- subforna(out$ARTURN_12M - out$ARTURN_Y4,NAvalue)
+    out$ARTURN_12M_Y5 <- subforna(out$ARTURN_12M - out$ARTURN_Y5,NAvalue)
+    out$ARTURN_12M_Y6 <- subforna(out$ARTURN_12M - out$ARTURN_Y6,NAvalue)
+    out$ARTURN_12M_Y7 <- subforna(out$ARTURN_12M - out$ARTURN_Y7,NAvalue)
+    out$ARTURN_12M <- subforna(out$ARTURN_12M,NAvalue)
+    out$ARTURN_Y1 <- subforna(out$ARTURN_Y1,NAvalue)
     
-    out$CURR_Q1_Y1 <- subforna(out$CURR_Q1 - out$CURR_Y1,"median")
-    out$CURR_Q1_Y2 <- subforna(out$CURR_Q1 - out$CURR_Y2,"median")
-    out$CURR_Q1_Y3 <- subforna(out$CURR_Q1 - out$CURR_Y3,"median")
-    out$CURR_Q1_Y4 <- subforna(out$CURR_Q1 - out$CURR_Y4,"median")
-    out$CURR_Q1_Y5 <- subforna(out$CURR_Q1 - out$CURR_Y5,"median")
-    out$CURR_Q1_Y6 <- subforna(out$CURR_Q1 - out$CURR_Y6,"median")
-    out$CURR_Q1_Y7 <- subforna(out$CURR_Q1 - out$CURR_Y7,"median")
-    out$CURR_Q1 <- subforna(out$CURR_Q1,"median")
-    out$CURR_Y1 <- subforna(out$CURR_Y1,"median")
+    out$CURR_Q1_Y1 <- subforna(out$CURR_Q1 - out$CURR_Y1,NAvalue)
+    out$CURR_Q1_Y2 <- subforna(out$CURR_Q1 - out$CURR_Y2,NAvalue)
+    out$CURR_Q1_Y3 <- subforna(out$CURR_Q1 - out$CURR_Y3,NAvalue)
+    out$CURR_Q1_Y4 <- subforna(out$CURR_Q1 - out$CURR_Y4,NAvalue)
+    out$CURR_Q1_Y5 <- subforna(out$CURR_Q1 - out$CURR_Y5,NAvalue)
+    out$CURR_Q1_Y6 <- subforna(out$CURR_Q1 - out$CURR_Y6,NAvalue)
+    out$CURR_Q1_Y7 <- subforna(out$CURR_Q1 - out$CURR_Y7,NAvalue)
+    out$CURR_Q1 <- subforna(out$CURR_Q1,NAvalue)
+    out$CURR_Y1 <- subforna(out$CURR_Y1,NAvalue)
     
-    out$ERBV <- subforna(out$ERBV,"median")
+    out$ERBV <- subforna(out$ERBV,NAvalue)
     out$FSCORE_12M <- subforna(out$FSCORE_12M,0)
     out$FSCORE_Y1 <- subforna(out$FSCORE_Y1,0)
     
-    out$GPM_12M_A5Y <- subforna(out$GPM_12M - out$GPM_A5Y,"median")
-    out$GPM_12M_Y1 <- subforna(out$GPM_12M - out$GPM_Y1,"median")
-    out$GPM_12M_Y2 <- subforna(out$GPM_12M - out$GPM_Y2,"median")
-    out$GPM_12M_Y3 <- subforna(out$GPM_12M - out$GPM_Y3,"median")
-    out$GPM_12M_Y4 <- subforna(out$GPM_12M - out$GPM_Y4,"median")
-    out$GPM_12M_Y5 <- subforna(out$GPM_12M - out$GPM_Y5,"median")
-    out$GPM_12M_Y6 <- subforna(out$GPM_12M - out$GPM_Y6,"median")
-    out$GPM_12M_Y7 <- subforna(out$GPM_12M - out$GPM_Y7,"median")
-    out$GPM_A5Y <- subforna(out$GPM_A5Y,"median")
-    out$GPM_12M <- subforna(out$GPM_12M,"median")
-    out$GPM_Y1 <- subforna(out$GPM_Y1,"median")
+    out$GPM_12M_A5Y <- subforna(out$GPM_12M - out$GPM_A5Y,NAvalue)
+    out$GPM_12M_Y1 <- subforna(out$GPM_12M - out$GPM_Y1,NAvalue)
+    out$GPM_12M_Y2 <- subforna(out$GPM_12M - out$GPM_Y2,NAvalue)
+    out$GPM_12M_Y3 <- subforna(out$GPM_12M - out$GPM_Y3,NAvalue)
+    out$GPM_12M_Y4 <- subforna(out$GPM_12M - out$GPM_Y4,NAvalue)
+    out$GPM_12M_Y5 <- subforna(out$GPM_12M - out$GPM_Y5,NAvalue)
+    out$GPM_12M_Y6 <- subforna(out$GPM_12M - out$GPM_Y6,NAvalue)
+    out$GPM_12M_Y7 <- subforna(out$GPM_12M - out$GPM_Y7,NAvalue)
+    out$GPM_A5Y <- subforna(out$GPM_A5Y,NAvalue)
+    out$GPM_12M <- subforna(out$GPM_12M,NAvalue)
+    out$GPM_Y1 <- subforna(out$GPM_Y1,NAvalue)
     
-    out$INVTRN_12M_Y1 <- subforna(out$INVTRN_12M - out$INVTRN_Y1,"median")
-    out$INVTRN_12M_Y2 <- subforna(out$INVTRN_12M - out$INVTRN_Y2,"median")
-    out$INVTRN_12M_Y3 <- subforna(out$INVTRN_12M - out$INVTRN_Y3,"median")
-    out$INVTRN_12M_Y4 <- subforna(out$INVTRN_12M - out$INVTRN_Y4,"median")
-    out$INVTRN_12M_Y5 <- subforna(out$INVTRN_12M - out$INVTRN_Y5,"median")
-    out$INVTRN_12M_Y6 <- subforna(out$INVTRN_12M - out$INVTRN_Y6,"median")
-    out$INVTRN_12M_Y7 <- subforna(out$INVTRN_12M - out$INVTRN_Y7,"median")
-    out$INVTRN_12M <- subforna(out$INVTRN_12M,"median")
-    out$INVTRN_Y1 <- subforna(out$INVTRN_Y1,"median")
+    out$INVTRN_12M_Y1 <- subforna(out$INVTRN_12M - out$INVTRN_Y1,NAvalue)
+    out$INVTRN_12M_Y2 <- subforna(out$INVTRN_12M - out$INVTRN_Y2,NAvalue)
+    out$INVTRN_12M_Y3 <- subforna(out$INVTRN_12M - out$INVTRN_Y3,NAvalue)
+    out$INVTRN_12M_Y4 <- subforna(out$INVTRN_12M - out$INVTRN_Y4,NAvalue)
+    out$INVTRN_12M_Y5 <- subforna(out$INVTRN_12M - out$INVTRN_Y5,NAvalue)
+    out$INVTRN_12M_Y6 <- subforna(out$INVTRN_12M - out$INVTRN_Y6,NAvalue)
+    out$INVTRN_12M_Y7 <- subforna(out$INVTRN_12M - out$INVTRN_Y7,NAvalue)
+    out$INVTRN_12M <- subforna(out$INVTRN_12M,NAvalue)
+    out$INVTRN_Y1 <- subforna(out$INVTRN_Y1,NAvalue)
     
-    out$LTD_EQ_Q1_Y1 <- subforna(out$LTD_EQ_Q1 - out$LTD_EQ_Y1,"median")
-    out$LTD_EQ_Q1_Y2 <- subforna(out$LTD_EQ_Q1 - out$LTD_EQ_Y2,"median")
-    out$LTD_EQ_Q1_Y3 <- subforna(out$LTD_EQ_Q1 - out$LTD_EQ_Y3,"median")
-    out$LTD_EQ_Q1_Y4 <- subforna(out$LTD_EQ_Q1 - out$LTD_EQ_Y4,"median")
-    out$LTD_EQ_Q1_Y5 <- subforna(out$LTD_EQ_Q1 - out$LTD_EQ_Y5,"median")
-    out$LTD_EQ_Q1_Y6 <- subforna(out$LTD_EQ_Q1 - out$LTD_EQ_Y6,"median")
-    out$LTD_EQ_Q1_Y7 <- subforna(out$LTD_EQ_Q1 - out$LTD_EQ_Y7,"median")
-    out$LTD_EQ_Q1 <- subforna(out$LTD_EQ_Q1,"median")
-    out$LTD_EQ_Y1 <- subforna(out$LTD_EQ_Y1,"median")
+    out$LTD_EQ_Q1_Y1 <- subforna(out$LTD_EQ_Q1 - out$LTD_EQ_Y1,NAvalue)
+    out$LTD_EQ_Q1_Y2 <- subforna(out$LTD_EQ_Q1 - out$LTD_EQ_Y2,NAvalue)
+    out$LTD_EQ_Q1_Y3 <- subforna(out$LTD_EQ_Q1 - out$LTD_EQ_Y3,NAvalue)
+    out$LTD_EQ_Q1_Y4 <- subforna(out$LTD_EQ_Q1 - out$LTD_EQ_Y4,NAvalue)
+    out$LTD_EQ_Q1_Y5 <- subforna(out$LTD_EQ_Q1 - out$LTD_EQ_Y5,NAvalue)
+    out$LTD_EQ_Q1_Y6 <- subforna(out$LTD_EQ_Q1 - out$LTD_EQ_Y6,NAvalue)
+    out$LTD_EQ_Q1_Y7 <- subforna(out$LTD_EQ_Q1 - out$LTD_EQ_Y7,NAvalue)
+    out$LTD_EQ_Q1 <- subforna(out$LTD_EQ_Q1,NAvalue)
+    out$LTD_EQ_Y1 <- subforna(out$LTD_EQ_Y1,NAvalue)
     
-    out$LTD_TC_Q1_Y1 <- subforna(out$LTD_TC_Q1 - out$LTD_TC_Y1,"median")
-    out$LTD_TC_Q1_Y2 <- subforna(out$LTD_TC_Q1 - out$LTD_TC_Y2,"median")
-    out$LTD_TC_Q1_Y3 <- subforna(out$LTD_TC_Q1 - out$LTD_TC_Y3,"median")
-    out$LTD_TC_Q1_Y4 <- subforna(out$LTD_TC_Q1 - out$LTD_TC_Y4,"median")
-    out$LTD_TC_Q1_Y5 <- subforna(out$LTD_TC_Q1 - out$LTD_TC_Y5,"median")
-    out$LTD_TC_Q1_Y6 <- subforna(out$LTD_TC_Q1 - out$LTD_TC_Y6,"median")
-    out$LTD_TC_Q1_Y7 <- subforna(out$LTD_TC_Q1 - out$LTD_TC_Y7,"median")
-    out$LTD_TC_Q1 <- subforna(out$LTD_TC_Q1,"median")
-    out$LTD_TC_Y1 <- subforna(out$LTD_TC_Y1,"median")
+    out$LTD_TC_Q1_Y1 <- subforna(out$LTD_TC_Q1 - out$LTD_TC_Y1,NAvalue)
+    out$LTD_TC_Q1_Y2 <- subforna(out$LTD_TC_Q1 - out$LTD_TC_Y2,NAvalue)
+    out$LTD_TC_Q1_Y3 <- subforna(out$LTD_TC_Q1 - out$LTD_TC_Y3,NAvalue)
+    out$LTD_TC_Q1_Y4 <- subforna(out$LTD_TC_Q1 - out$LTD_TC_Y4,NAvalue)
+    out$LTD_TC_Q1_Y5 <- subforna(out$LTD_TC_Q1 - out$LTD_TC_Y5,NAvalue)
+    out$LTD_TC_Q1_Y6 <- subforna(out$LTD_TC_Q1 - out$LTD_TC_Y6,NAvalue)
+    out$LTD_TC_Q1_Y7 <- subforna(out$LTD_TC_Q1 - out$LTD_TC_Y7,NAvalue)
+    out$LTD_TC_Q1 <- subforna(out$LTD_TC_Q1,NAvalue)
+    out$LTD_TC_Y1 <- subforna(out$LTD_TC_Y1,NAvalue)
     
-    out$LTD_WC_Q1 <- subforna(out$LTD_WC_Q1,"median")
+    out$LTD_WC_Q1 <- subforna(out$LTD_WC_Q1,NAvalue)
     
-    out$NPM_12M_Y1 <- subforna(out$NPM_12M - out$NPM_Y1,"median")
-    out$NPM_12M_Y2 <- subforna(out$NPM_12M - out$NPM_Y2,"median")
-    out$NPM_12M_Y3 <- subforna(out$NPM_12M - out$NPM_Y3,"median")
-    out$NPM_12M_Y4 <- subforna(out$NPM_12M - out$NPM_Y4,"median")
-    out$NPM_12M_Y5 <- subforna(out$NPM_12M - out$NPM_Y5,"median")
-    out$NPM_12M_Y6 <- subforna(out$NPM_12M - out$NPM_Y6,"median")
-    out$NPM_12M_Y7 <- subforna(out$NPM_12M - out$NPM_Y7,"median")
-    out$NPM_12M <- subforna(out$NPM_12M,"median")
-    out$NPM_Y1 <- subforna(out$NPM_Y1,"median")
+    out$NPM_12M_Y1 <- subforna(out$NPM_12M - out$NPM_Y1,NAvalue)
+    out$NPM_12M_Y2 <- subforna(out$NPM_12M - out$NPM_Y2,NAvalue)
+    out$NPM_12M_Y3 <- subforna(out$NPM_12M - out$NPM_Y3,NAvalue)
+    out$NPM_12M_Y4 <- subforna(out$NPM_12M - out$NPM_Y4,NAvalue)
+    out$NPM_12M_Y5 <- subforna(out$NPM_12M - out$NPM_Y5,NAvalue)
+    out$NPM_12M_Y6 <- subforna(out$NPM_12M - out$NPM_Y6,NAvalue)
+    out$NPM_12M_Y7 <- subforna(out$NPM_12M - out$NPM_Y7,NAvalue)
+    out$NPM_12M <- subforna(out$NPM_12M,NAvalue)
+    out$NPM_Y1 <- subforna(out$NPM_Y1,NAvalue)
     
-    out$OPM_12M_A3Y <- subforna(out$OPM_12M - out$OPM_A3Y,"median")
-    out$OPM_12M_A5Y <- subforna(out$OPM_12M - out$OPM_A5Y,"median")
-    out$OPM_12M_Y1 <- subforna(out$OPM_12M - out$OPM_Y1,"median")
-    out$OPM_12M_Y2 <- subforna(out$OPM_12M - out$OPM_Y2,"median")
-    out$OPM_12M_Y3 <- subforna(out$OPM_12M - out$OPM_Y3,"median")
-    out$OPM_12M_Y4 <- subforna(out$OPM_12M - out$OPM_Y4,"median")
-    out$OPM_12M_Y5 <- subforna(out$OPM_12M - out$OPM_Y5,"median")
-    out$OPM_12M_Y6 <- subforna(out$OPM_12M - out$OPM_Y6,"median")
-    out$OPM_12M_Y7 <- subforna(out$OPM_12M - out$OPM_Y7,"median")
-    out$OPM_A3Y <- subforna(out$OPM_A3Y,"median")
-    out$OPM_A5Y <- subforna(out$OPM_A5Y,"median")
-    out$OPM_12M <- subforna(out$OPM_12M,"median")
-    out$OPM_Y1 <- subforna(out$OPM_Y1,"median")
+    out$OPM_12M_A3Y <- subforna(out$OPM_12M - out$OPM_A3Y,NAvalue)
+    out$OPM_12M_A5Y <- subforna(out$OPM_12M - out$OPM_A5Y,NAvalue)
+    out$OPM_12M_Y1 <- subforna(out$OPM_12M - out$OPM_Y1,NAvalue)
+    out$OPM_12M_Y2 <- subforna(out$OPM_12M - out$OPM_Y2,NAvalue)
+    out$OPM_12M_Y3 <- subforna(out$OPM_12M - out$OPM_Y3,NAvalue)
+    out$OPM_12M_Y4 <- subforna(out$OPM_12M - out$OPM_Y4,NAvalue)
+    out$OPM_12M_Y5 <- subforna(out$OPM_12M - out$OPM_Y5,NAvalue)
+    out$OPM_12M_Y6 <- subforna(out$OPM_12M - out$OPM_Y6,NAvalue)
+    out$OPM_12M_Y7 <- subforna(out$OPM_12M - out$OPM_Y7,NAvalue)
+    out$OPM_A3Y <- subforna(out$OPM_A3Y,NAvalue)
+    out$OPM_A5Y <- subforna(out$OPM_A5Y,NAvalue)
+    out$OPM_12M <- subforna(out$OPM_12M,NAvalue)
+    out$OPM_Y1 <- subforna(out$OPM_Y1,NAvalue)
     
-    out$PAYOUT_12M_A7Y <- subforna(out$PAYOUT_12M - out$PAYOUT_A7Y,"median")
-    out$PAYOUT_12M_Y1 <- subforna(out$PAYOUT_12M - out$PAYOUT_Y1,"median")
-    out$PAYOUT_12M_Y2 <- subforna(out$PAYOUT_12M - out$PAYOUT_Y2,"median")
-    out$PAYOUT_12M_Y3 <- subforna(out$PAYOUT_12M - out$PAYOUT_Y3,"median")
-    out$PAYOUT_12M_Y4 <- subforna(out$PAYOUT_12M - out$PAYOUT_Y4,"median")
-    out$PAYOUT_12M_Y5 <- subforna(out$PAYOUT_12M - out$PAYOUT_Y5,"median")
-    out$PAYOUT_12M_Y6 <- subforna(out$PAYOUT_12M - out$PAYOUT_Y6,"median")
-    out$PAYOUT_12M_Y7 <- subforna(out$PAYOUT_12M - out$PAYOUT_Y7,"median")
-    out$PAYOUT_A7Y <- subforna(out$PAYOUT_A7Y,"median")
-    out$PAYOUT_12M <- subforna(out$PAYOUT_12M,"median")
-    out$PAYOUT_Y1 <- subforna(out$PAYOUT_Y1,"median")
+    out$PAYOUT_12M_A7Y <- subforna(out$PAYOUT_12M - out$PAYOUT_A7Y,NAvalue)
+    out$PAYOUT_12M_Y1 <- subforna(out$PAYOUT_12M - out$PAYOUT_Y1,NAvalue)
+    out$PAYOUT_12M_Y2 <- subforna(out$PAYOUT_12M - out$PAYOUT_Y2,NAvalue)
+    out$PAYOUT_12M_Y3 <- subforna(out$PAYOUT_12M - out$PAYOUT_Y3,NAvalue)
+    out$PAYOUT_12M_Y4 <- subforna(out$PAYOUT_12M - out$PAYOUT_Y4,NAvalue)
+    out$PAYOUT_12M_Y5 <- subforna(out$PAYOUT_12M - out$PAYOUT_Y5,NAvalue)
+    out$PAYOUT_12M_Y6 <- subforna(out$PAYOUT_12M - out$PAYOUT_Y6,NAvalue)
+    out$PAYOUT_12M_Y7 <- subforna(out$PAYOUT_12M - out$PAYOUT_Y7,NAvalue)
+    out$PAYOUT_A7Y <- subforna(out$PAYOUT_A7Y,NAvalue)
+    out$PAYOUT_12M <- subforna(out$PAYOUT_12M,NAvalue)
+    out$PAYOUT_Y1 <- subforna(out$PAYOUT_Y1,NAvalue)
     
-    out$PR_BV_CHG <- subforna(out$PR_BV_CHG,"median")
-    out$PTM_12M <- subforna(out$PTM_12M,"median")
+    out$PR_BV_CHG <- subforna(out$PR_BV_CHG,NAvalue)
+    out$PTM_12M <- subforna(out$PTM_12M,NAvalue)
     
-    out$QUICK_Q1_Y1 <- subforna(out$QUICK_Q1 - out$QUICK_Y1,"median")
-    out$QUICK_Q1_Y2 <- subforna(out$QUICK_Q1 - out$QUICK_Y2,"median")
-    out$QUICK_Q1_Y3 <- subforna(out$QUICK_Q1 - out$QUICK_Y3,"median")
-    out$QUICK_Q1_Y4 <- subforna(out$QUICK_Q1 - out$QUICK_Y4,"median")
-    out$QUICK_Q1_Y5 <- subforna(out$QUICK_Q1 - out$QUICK_Y5,"median")
-    out$QUICK_Q1_Y6 <- subforna(out$QUICK_Q1 - out$QUICK_Y6,"median")
-    out$QUICK_Q1_Y7 <- subforna(out$QUICK_Q1 - out$QUICK_Y7,"median")
-    out$QUICK_Q1 <- subforna(out$QUICK_Q1,"median")
-    out$QUICK_Y1 <- subforna(out$QUICK_Y1,"median")
+    out$QUICK_Q1_Y1 <- subforna(out$QUICK_Q1 - out$QUICK_Y1,NAvalue)
+    out$QUICK_Q1_Y2 <- subforna(out$QUICK_Q1 - out$QUICK_Y2,NAvalue)
+    out$QUICK_Q1_Y3 <- subforna(out$QUICK_Q1 - out$QUICK_Y3,NAvalue)
+    out$QUICK_Q1_Y4 <- subforna(out$QUICK_Q1 - out$QUICK_Y4,NAvalue)
+    out$QUICK_Q1_Y5 <- subforna(out$QUICK_Q1 - out$QUICK_Y5,NAvalue)
+    out$QUICK_Q1_Y6 <- subforna(out$QUICK_Q1 - out$QUICK_Y6,NAvalue)
+    out$QUICK_Q1_Y7 <- subforna(out$QUICK_Q1 - out$QUICK_Y7,NAvalue)
+    out$QUICK_Q1 <- subforna(out$QUICK_Q1,NAvalue)
+    out$QUICK_Y1 <- subforna(out$QUICK_Y1,NAvalue)
     
-    out$RDM_12M <- subforna(out$RDM_12M,"median")
+    out$RDM_12M <- subforna(out$RDM_12M,NAvalue)
     
-    out$ROA_12M_Y1 <- subforna(out$ROA_12M - out$ROA_Y1,"median")
-    out$ROA_12M_Y2 <- subforna(out$ROA_12M - out$ROA_Y2,"median")
-    out$ROA_12M_Y3 <- subforna(out$ROA_12M - out$ROA_Y3,"median")
-    out$ROA_12M_Y4 <- subforna(out$ROA_12M - out$ROA_Y4,"median")
-    out$ROA_12M_Y5 <- subforna(out$ROA_12M - out$ROA_Y5,"median")
-    out$ROA_12M_Y6 <- subforna(out$ROA_12M - out$ROA_Y6,"median")
-    out$ROA_12M_Y7 <- subforna(out$ROA_12M - out$ROA_Y7,"median")
-    out$ROA_12M <- subforna(out$ROA_12M,"median")
-    out$ROA_Y1 <- subforna(out$ROA_Y1,"median")
+    out$ROA_12M_Y1 <- subforna(out$ROA_12M - out$ROA_Y1,NAvalue)
+    out$ROA_12M_Y2 <- subforna(out$ROA_12M - out$ROA_Y2,NAvalue)
+    out$ROA_12M_Y3 <- subforna(out$ROA_12M - out$ROA_Y3,NAvalue)
+    out$ROA_12M_Y4 <- subforna(out$ROA_12M - out$ROA_Y4,NAvalue)
+    out$ROA_12M_Y5 <- subforna(out$ROA_12M - out$ROA_Y5,NAvalue)
+    out$ROA_12M_Y6 <- subforna(out$ROA_12M - out$ROA_Y6,NAvalue)
+    out$ROA_12M_Y7 <- subforna(out$ROA_12M - out$ROA_Y7,NAvalue)
+    out$ROA_12M <- subforna(out$ROA_12M,NAvalue)
+    out$ROA_Y1 <- subforna(out$ROA_Y1,NAvalue)
     
-    out$ROE_12M_A5Y <- subforna(out$ROE_12M - out$ROE_A5Y,"median")
-    out$ROE_12M_A7Y <- subforna(out$ROE_12M - out$ROE_A7Y,"median")
-    out$ROE_12M_Y1 <- subforna(out$ROE_12M - out$ROE_Y1,"median")
-    out$ROE_12M_Y2 <- subforna(out$ROE_12M - out$ROE_Y2,"median")
-    out$ROE_12M_Y3 <- subforna(out$ROE_12M - out$ROE_Y3,"median")
-    out$ROE_12M_Y4 <- subforna(out$ROE_12M - out$ROE_Y4,"median")
-    out$ROE_12M_Y5 <- subforna(out$ROE_12M - out$ROE_Y5,"median")
-    out$ROE_12M_Y6 <- subforna(out$ROE_12M - out$ROE_Y6,"median")
-    out$ROE_12M_Y7 <- subforna(out$ROE_12M - out$ROE_Y7,"median")
-    out$ROE_12M <- subforna(out$ROE_12M,"median")
-    out$ROE_Y1 <- subforna(out$ROE_Y1,"median")
-    out$ROE_A5Y <- subforna(out$ROE_A5Y,"median")
-    out$ROE_A7Y <- subforna(out$ROE_A7Y,"median")
+    out$ROE_12M_A5Y <- subforna(out$ROE_12M - out$ROE_A5Y,NAvalue)
+    out$ROE_12M_A7Y <- subforna(out$ROE_12M - out$ROE_A7Y,NAvalue)
+    out$ROE_12M_Y1 <- subforna(out$ROE_12M - out$ROE_Y1,NAvalue)
+    out$ROE_12M_Y2 <- subforna(out$ROE_12M - out$ROE_Y2,NAvalue)
+    out$ROE_12M_Y3 <- subforna(out$ROE_12M - out$ROE_Y3,NAvalue)
+    out$ROE_12M_Y4 <- subforna(out$ROE_12M - out$ROE_Y4,NAvalue)
+    out$ROE_12M_Y5 <- subforna(out$ROE_12M - out$ROE_Y5,NAvalue)
+    out$ROE_12M_Y6 <- subforna(out$ROE_12M - out$ROE_Y6,NAvalue)
+    out$ROE_12M_Y7 <- subforna(out$ROE_12M - out$ROE_Y7,NAvalue)
+    out$ROE_12M <- subforna(out$ROE_12M,NAvalue)
+    out$ROE_Y1 <- subforna(out$ROE_Y1,NAvalue)
+    out$ROE_A5Y <- subforna(out$ROE_A5Y,NAvalue)
+    out$ROE_A7Y <- subforna(out$ROE_A7Y,NAvalue)
     
-    out$TA_TRN_12M_Y1 <- subforna(out$TA_TRN_12M - out$TA_TRN_Y1,"median")
-    out$TA_TRN_12M_Y2 <- subforna(out$TA_TRN_12M - out$TA_TRN_Y2,"median")
-    out$TA_TRN_12M_Y3 <- subforna(out$TA_TRN_12M - out$TA_TRN_Y3,"median")
-    out$TA_TRN_12M_Y4 <- subforna(out$TA_TRN_12M - out$TA_TRN_Y4,"median")
-    out$TA_TRN_12M_Y5 <- subforna(out$TA_TRN_12M - out$TA_TRN_Y5,"median")
-    out$TA_TRN_12M_Y6 <- subforna(out$TA_TRN_12M - out$TA_TRN_Y6,"median")
-    out$TA_TRN_12M_Y7 <- subforna(out$TA_TRN_12M - out$TA_TRN_Y7,"median")
-    out$TA_TRN_12M <- subforna(out$TA_TRN_12M,"median")
-    out$TA_TRN_Y1 <- subforna(out$TA_TRN_Y1,"median")
+    out$TA_TRN_12M_Y1 <- subforna(out$TA_TRN_12M - out$TA_TRN_Y1,NAvalue)
+    out$TA_TRN_12M_Y2 <- subforna(out$TA_TRN_12M - out$TA_TRN_Y2,NAvalue)
+    out$TA_TRN_12M_Y3 <- subforna(out$TA_TRN_12M - out$TA_TRN_Y3,NAvalue)
+    out$TA_TRN_12M_Y4 <- subforna(out$TA_TRN_12M - out$TA_TRN_Y4,NAvalue)
+    out$TA_TRN_12M_Y5 <- subforna(out$TA_TRN_12M - out$TA_TRN_Y5,NAvalue)
+    out$TA_TRN_12M_Y6 <- subforna(out$TA_TRN_12M - out$TA_TRN_Y6,NAvalue)
+    out$TA_TRN_12M_Y7 <- subforna(out$TA_TRN_12M - out$TA_TRN_Y7,NAvalue)
+    out$TA_TRN_12M <- subforna(out$TA_TRN_12M,NAvalue)
+    out$TA_TRN_Y1 <- subforna(out$TA_TRN_Y1,NAvalue)
     
-    out$TIE_12M_Y1 <- subforna(out$TIE_12M - out$TIE_Y1,"median")
-    out$TIE_12M_Y2 <- subforna(out$TIE_12M - out$TIE_Y2,"median")
-    out$TIE_12M_Y3 <- subforna(out$TIE_12M - out$TIE_Y3,"median")
-    out$TIE_12M_Y4 <- subforna(out$TIE_12M - out$TIE_Y4,"median")
-    out$TIE_12M_Y5 <- subforna(out$TIE_12M - out$TIE_Y5,"median")
-    out$TIE_12M_Y6 <- subforna(out$TIE_12M - out$TIE_Y6,"median")
-    out$TIE_12M_Y7 <- subforna(out$TIE_12M - out$TIE_Y7,"median")
-    out$TIE_12M <- subforna(out$TIE_12M,"median")
-    out$TIE_Y1 <- subforna(out$TIE_Y1,"median")
+    out$TIE_12M_Y1 <- subforna(out$TIE_12M - out$TIE_Y1,NAvalue)
+    out$TIE_12M_Y2 <- subforna(out$TIE_12M - out$TIE_Y2,NAvalue)
+    out$TIE_12M_Y3 <- subforna(out$TIE_12M - out$TIE_Y3,NAvalue)
+    out$TIE_12M_Y4 <- subforna(out$TIE_12M - out$TIE_Y4,NAvalue)
+    out$TIE_12M_Y5 <- subforna(out$TIE_12M - out$TIE_Y5,NAvalue)
+    out$TIE_12M_Y6 <- subforna(out$TIE_12M - out$TIE_Y6,NAvalue)
+    out$TIE_12M_Y7 <- subforna(out$TIE_12M - out$TIE_Y7,NAvalue)
+    out$TIE_12M <- subforna(out$TIE_12M,NAvalue)
+    out$TIE_Y1 <- subforna(out$TIE_Y1,NAvalue)
     
-    out$TL_TA_Q1_Y1 <- subforna(out$TL_TA_Q1 - out$TL_TA_Y1,"median")
-    out$TL_TA_Q1_Y2 <- subforna(out$TL_TA_Q1 - out$TL_TA_Y2,"median")
-    out$TL_TA_Q1_Y3 <- subforna(out$TL_TA_Q1 - out$TL_TA_Y3,"median")
-    out$TL_TA_Q1_Y4 <- subforna(out$TL_TA_Q1 - out$TL_TA_Y4,"median")
-    out$TL_TA_Q1_Y5 <- subforna(out$TL_TA_Q1 - out$TL_TA_Y5,"median")
-    out$TL_TA_Q1_Y6 <- subforna(out$TL_TA_Q1 - out$TL_TA_Y6,"median")
-    out$TL_TA_Q1_Y7 <- subforna(out$TL_TA_Q1 - out$TL_TA_Y7,"median")
-    out$TL_TA_Q1 <- subforna(out$TL_TA_Q1,"median")
-    out$TL_TA_Y1 <- subforna(out$TL_TA_Y1,"median")    
+    out$TL_TA_Q1_Y1 <- subforna(out$TL_TA_Q1 - out$TL_TA_Y1,NAvalue)
+    out$TL_TA_Q1_Y2 <- subforna(out$TL_TA_Q1 - out$TL_TA_Y2,NAvalue)
+    out$TL_TA_Q1_Y3 <- subforna(out$TL_TA_Q1 - out$TL_TA_Y3,NAvalue)
+    out$TL_TA_Q1_Y4 <- subforna(out$TL_TA_Q1 - out$TL_TA_Y4,NAvalue)
+    out$TL_TA_Q1_Y5 <- subforna(out$TL_TA_Q1 - out$TL_TA_Y5,NAvalue)
+    out$TL_TA_Q1_Y6 <- subforna(out$TL_TA_Q1 - out$TL_TA_Y6,NAvalue)
+    out$TL_TA_Q1_Y7 <- subforna(out$TL_TA_Q1 - out$TL_TA_Y7,NAvalue)
+    out$TL_TA_Q1 <- subforna(out$TL_TA_Q1,NAvalue)
+    out$TL_TA_Y1 <- subforna(out$TL_TA_Y1,NAvalue)    
     
     for (x in c(
             "ARTURN_Y2","ARTURN_Y3","ARTURN_Y4","ARTURN_Y5","ARTURN_Y6","ARTURN_Y7",
@@ -567,56 +498,56 @@ get_rat_data<-function(strDate){ # get ratio data from sip files
     }
     return(out)
 }
-get_psd_data<-function(strDate){
+get_psd_data<-function(strDate,NAvalue=NA){
     si_psd_flds<-get_si_selected_fld_list()[["psd"]]
     out<-load_fields_from_file("si_psd",rdata.folder,strDate,si_psd_flds)
     
-    out$PR_PRL_52W <-  subforna(100*(out$PRICE / out$PRICEL_52W-1),"median")
-    out$SHR_AQ1_AQ2 <- subforna(out$SHR_AQ1 / out$SHR_AQ2,"median")
-    out$SHR_AQ1_AQ3 <- subforna(out$SHR_AQ1 / out$SHR_AQ3,"median")
-    out$SHR_AQ1_AQ4 <- subforna(out$SHR_AQ1 / out$SHR_AQ4,"median")
-    out$SHR_AQ1_AQ5 <- subforna(out$SHR_AQ1 / out$SHR_AQ5,"median")
-    out$SHR_AQ1_AQ6 <- subforna(out$SHR_AQ1 / out$SHR_AQ6,"median")
-    out$SHR_AQ1_AQ7 <- subforna(out$SHR_AQ1 / out$SHR_AQ7,"median")
-    out$SHR_AQ1_AQ8 <- subforna(out$SHR_AQ1 / out$SHR_AQ8,"median")
-    out$SHR_AQ1_AY1 <- subforna(out$SHR_AQ1 / out$SHR_AY1,"median")
-    out$SHR_AQ1_AY2 <- subforna(out$SHR_AQ1 / out$SHR_AY2,"median")
-    out$SHR_AQ1_AY3 <- subforna(out$SHR_AQ1 / out$SHR_AY3,"median")
-    out$SHR_AQ1_AY4 <- subforna(out$SHR_AQ1 / out$SHR_AY4,"median")
-    out$SHR_AQ1_AY5 <- subforna(out$SHR_AQ1 / out$SHR_AY5,"median")
-    out$SHR_AQ1_AY6 <- subforna(out$SHR_AQ1 / out$SHR_AY6,"median")
-    out$SHR_AQ1_AY7 <- subforna(out$SHR_AQ1 / out$SHR_AY7,"median")
-    out$AVD10_SHRQ1 <- subforna(out$AVD_10D / out$SHR_AQ1,"median")
-    out$AVM03_SHRQ1 <- subforna(out$AVM_03M / out$SHR_AQ1,"median")
-    out$AVD10_AVM03 <- subforna(out$AVD_10D / out$AVM_03M,"median")
-    out$INSTPS_SHRAQ1 <- subforna(100*(out$INSTPS / out$SHR_AQ1),"median")
-    out$INSTSS_SHRAQ1 <- subforna(100*(out$INSTSS / out$SHR_AQ1),"median")
-    out$INSTNET_SHRAQ1 <- subforna(100*(out$INSTPS-out$INSTSS) / out$SHR_AQ1,"median")
-    out$INSDPS_SHRAQ1 <- subforna(100*(out$INSDPS / out$SHR_AQ1),"median")
-    out$INSDSS_SHRAQ1 <- subforna(100*(out$INSDSS / out$SHR_AQ1),"median")
-    out$SHRINST <-  subforna(out$SHRINST, "median")
-    out$SHRINSD <-  subforna(out$SHRINSD, "median")
-    out$SHRINSTN <-  subforna(out$SHRINSTN, "median")
-    out$INSDPT <- subforna(out$INSDPT,"median")
-    out$INSDST <- subforna(out$INSDST,"median")
-    out$INSDTNET <- subforna(out$INSDPT - out$INSDST,"median")
-    out$INS_PR_SHR <-  subforna(out$INS_PR_SHR,"median")
-    out$FLOAT <-  subforna(out$FLOAT,"median")
-    out$BETA <-  subforna(out$BETA,"median")
-    out$MKTCAP <-  subforna(out$MKTCAP,"median")
-    out$PRCHG_AM3Y <- subforna(out$PRCHG_AM3Y,"median")
-    out$PRCHG_GM3Y <- subforna(out$PRCHG_GM3Y,"median")
-    out$PRCHG_SD3Y <- subforna(out$PRCHG_SD3Y,"median")
-    out$PRP_2YH <- subforna(out$PRP_2YH,"median")
-    out$DD_A3M <- subforna(out$DD_A3M,"median")
-    out$DD_A3M_MKTCAP <- subforna(out$DD_A3M/out$MKTCAP,"median")
-    out$PRICE<-subforna(out$PRICE,"median")
-    out$SHRINSD<-subforna(out$SHRINSD,"median")
-    out$SHRINST<-subforna(out$SHRINST,"median")
+    out$PR_PRL_52W <-  subforna(100*(out$PRICE / out$PRICEL_52W-1),NAvalue)
+    out$SHR_AQ1_AQ2 <- subforna(out$SHR_AQ1 / out$SHR_AQ2,NAvalue)
+    out$SHR_AQ1_AQ3 <- subforna(out$SHR_AQ1 / out$SHR_AQ3,NAvalue)
+    out$SHR_AQ1_AQ4 <- subforna(out$SHR_AQ1 / out$SHR_AQ4,NAvalue)
+    out$SHR_AQ1_AQ5 <- subforna(out$SHR_AQ1 / out$SHR_AQ5,NAvalue)
+    out$SHR_AQ1_AQ6 <- subforna(out$SHR_AQ1 / out$SHR_AQ6,NAvalue)
+    out$SHR_AQ1_AQ7 <- subforna(out$SHR_AQ1 / out$SHR_AQ7,NAvalue)
+    out$SHR_AQ1_AQ8 <- subforna(out$SHR_AQ1 / out$SHR_AQ8,NAvalue)
+    out$SHR_AQ1_AY1 <- subforna(out$SHR_AQ1 / out$SHR_AY1,NAvalue)
+    out$SHR_AQ1_AY2 <- subforna(out$SHR_AQ1 / out$SHR_AY2,NAvalue)
+    out$SHR_AQ1_AY3 <- subforna(out$SHR_AQ1 / out$SHR_AY3,NAvalue)
+    out$SHR_AQ1_AY4 <- subforna(out$SHR_AQ1 / out$SHR_AY4,NAvalue)
+    out$SHR_AQ1_AY5 <- subforna(out$SHR_AQ1 / out$SHR_AY5,NAvalue)
+    out$SHR_AQ1_AY6 <- subforna(out$SHR_AQ1 / out$SHR_AY6,NAvalue)
+    out$SHR_AQ1_AY7 <- subforna(out$SHR_AQ1 / out$SHR_AY7,NAvalue)
+    out$AVD10_SHRQ1 <- subforna(out$AVD_10D / out$SHR_AQ1,NAvalue)
+    out$AVM03_SHRQ1 <- subforna(out$AVM_03M / out$SHR_AQ1,NAvalue)
+    out$AVD10_AVM03 <- subforna(out$AVD_10D / out$AVM_03M,NAvalue)
+    out$INSTPS_SHRAQ1 <- subforna(100*(out$INSTPS / out$SHR_AQ1),NAvalue)
+    out$INSTSS_SHRAQ1 <- subforna(100*(out$INSTSS / out$SHR_AQ1),NAvalue)
+    out$INSTNET_SHRAQ1 <- subforna(100*(out$INSTPS-out$INSTSS) / out$SHR_AQ1,NAvalue)
+    out$INSDPS_SHRAQ1 <- subforna(100*(out$INSDPS / out$SHR_AQ1),NAvalue)
+    out$INSDSS_SHRAQ1 <- subforna(100*(out$INSDSS / out$SHR_AQ1),NAvalue)
+    out$SHRINST <-  subforna(out$SHRINST, NA)
+    out$SHRINSD <-  subforna(out$SHRINSD, NA)
+    out$SHRINSTN <-  subforna(out$SHRINSTN, NA)
+    out$INSDPT <- subforna(out$INSDPT,NAvalue)
+    out$INSDST <- subforna(out$INSDST,NAvalue)
+    out$INSDTNET <- subforna(out$INSDPT - out$INSDST,NAvalue)
+    out$INS_PR_SHR <-  subforna(out$INS_PR_SHR,NAvalue)
+    out$FLOAT <-  subforna(out$FLOAT,NAvalue)
+    out$BETA <-  subforna(out$BETA,NAvalue)
+    out$MKTCAP <-  subforna(out$MKTCAP,NAvalue)
+    out$PRCHG_AM3Y <- subforna(out$PRCHG_AM3Y,NAvalue)
+    out$PRCHG_GM3Y <- subforna(out$PRCHG_GM3Y,NAvalue)
+    out$PRCHG_SD3Y <- subforna(out$PRCHG_SD3Y,NAvalue)
+    out$PRP_2YH <- subforna(out$PRP_2YH,NAvalue)
+    out$DD_A3M <- subforna(out$DD_A3M,NAvalue)
+    out$DD_A3M_MKTCAP <- subforna(out$DD_A3M/out$MKTCAP,NAvalue)
+    out$PRICE<-subforna(out$PRICE,NAvalue)
+    out$SHRINSD<-subforna(out$SHRINSD,NAvalue)
+    out$SHRINST<-subforna(out$SHRINST,NAvalue)
     for (x in c(
         "PRCHG_04W","PRCHG_13W","PRCHG_26W","PRCHG_52W","RS_04W","RS_13W","RS_26W","RS_52W",
         "RSW_4Q","PR_PRH_52W")){
-        out[,x]<-subforna(out[,x],"median")
+        out[,x]<-subforna(out[,x],NAvalue)
     }        
     for (x in c(
         "PRICEL_52W","SHR_AQ1","SHR_AQ2","SHR_AQ3","SHR_AQ4","SHR_AQ5","SHR_AQ6","SHR_AQ7","SHR_AQ8",
@@ -627,7 +558,7 @@ get_psd_data<-function(strDate){
     }
     return(out)
 }
-get_ee_data<-function(strDate){
+get_ee_data<-function(strDate,NAvalue=NA){
     si_ee_flds <- get_si_selected_fld_list()[["ee"]]
     out<-load_fields_from_file("si_ee",rdata.folder,strDate,si_ee_flds)
     for (x in c("EPS_EG5","EPS_EY0EY1","EPSPM_EG5","EPSH_EG5","EPSL_EG5",
@@ -637,44 +568,17 @@ get_ee_data<-function(strDate){
                 "EPSSD_EG5","EPSSD_EQ0","EPSSD_EQ1","EPSSD_EY0","EPSSD_EY1","EPSSD_EY2",
                 "EPSDMP_EQ0","EPSDMP_EQ1","EPSDMP_EY0","EPSDMP_EY1","EPSDMP_EY2",
                 "QS_PERC","QS_SD","QS_SUE_Q1","EPS_GH1E0","EPS_EY0EY1","EPS_EY1EY2")){
-        out[,x] <- subforna(out[,x],"median")
+        out[,x] <- subforna(out[,x],NAvalue)
     }
     out$EPSSD_EY0 <- subforna(out$EPSSD_EY0,0)    
     return(out)
 }
-get_perc_data<-function(strDate){
+get_perc_data<-function(strDate,NAvalue=NA){
     si_perc_flds <- get_si_selected_fld_list()[["perc"]]
     out<-load_fields_from_file("si_perc",rdata.folder,strDate,si_perc_flds)
     for (x in si_perc_flds){
-        out[,x] <- subforna(out[,x],"median")
+        out[,x] <- subforna(out[,x],NAvalue)
     }    
-    return(out)
-}
-
-create_xdata_file<-function(InstallNum=1){
-    # Create a file with a bunch of X data.  Based on get_data_asof.
-    # This will be combined with Y data file.
-    # create strings of field names to be extracted from various files. Then load the files. Then create new fields
-    print(paste("create_xdata_file",InstallNum))
-    if (InstallNum>length(sipbInstallDates)) return(NA)
-    strDate<-sipbInstallDates[InstallNum]
-    
-    out <- get_ci_data(strDate)
-    out <- merge(out,get_psd_data(strDate),by="COMPANY_ID")
-    
-    out <- out[out$PRICE>=5 & out$MKTCAP>=250,]  # filter for prices at least $5 and market cap $250 million
-    
-    out <- merge(out,get_perc_data(strDate),by="COMPANY_ID")
-    out <- merge(out,get_mlt_data(strDate), by="COMPANY_ID")
-    out <- merge(out,get_gr_data(strDate),by="COMPANY_ID")
-    out <- merge(out,get_rat_data(strDate),by="COMPANY_ID")
-    out <- merge(out,get_ee_data(strDate),by="COMPANY_ID")
-    out$INSTALLDT <- strDate
-    
-    out2<-out[,c("COMPANY_ID","INSTALLDT")]
-    idx.dup<-duplicated(out2)
-    out<-out[!idx.dup,]
-    row.names(out)<-paste(out[,"COMPANY_ID"],out[,"INSTALLDT"],sep="")
     return(out)
 }
 
@@ -775,12 +679,84 @@ create_102to103_lookuptable<-function(){
     return(id_translate)
 }
 
-for (i in 2:2){ #length(sipbInstallDates)){
-    print(i)
-    xdata<-create_xdata_file(i)
-    save(xdata,file=paste(rdata.folder,"xdata",sipbInstallDates[i],".rdata",sep=""))
-    ydata<-create_ydata_file(i)
-    save(ydata,file=paste(rdata.folder,"ydata",sipbInstallDates[i],".rdata",sep=""))
+create_xdata_file<-function(InstallNum=1,NAvalue=NA){
+    # Create a file of X data from the .rdata files corresponding to SIP DBF files.
+    # Use an NAvalue other than NA to replace NAs in data.  This is especially useful here if you want to replace
+    # NAs with medians or means of the varialbe by install date.
+    if (InstallNum>length(sipbInstallDates)) return(NA)
+    strDate<-sipbInstallDates[InstallNum]
+    
+    out <- get_ci_data(strDate)
+    out <- merge(out,get_psd_data(strDate,NAvalue),by="COMPANY_ID")
+    
+    out <- out[out$PRICE>=5 & out$MKTCAP>=250,]  # filter for prices at least $5 and market cap $250 million
+    
+    out <- merge(out,get_perc_data(strDate,NAvalue),by="COMPANY_ID")
+    out <- merge(out,get_mlt_data(strDate,NAvalue), by="COMPANY_ID")
+    out <- merge(out,get_gr_data(strDate,NAvalue),by="COMPANY_ID")
+    out <- merge(out,get_rat_data(strDate,NAvalue),by="COMPANY_ID")
+    out <- merge(out,get_ee_data(strDate,NAvalue),by="COMPANY_ID")
+    out$INSTALLDT <- strDate
+    
+    out2<-out[,c("COMPANY_ID","INSTALLDT")]
+    idx.dup<-duplicated(out2)
+    out<-out[!idx.dup,]
+    row.names(out)<-paste(out[,"COMPANY_ID"],out[,"INSTALLDT"],sep="")
+    return(out)
 }
-rm(returns.monthly)
-create_xdata_file(153)
+
+create_ydata_file<-function(InstallNum=1){
+    # create a file with 1,3 6, and 12 month future returns to serve as dependent variable
+    # this will be saved and later combined with x data
+    if (InstallNum>length(sipbInstallDates)) return(NA)
+    strDate<-sipbInstallDates[InstallNum]
+    if (!exists("returns.monthly")) load(paste(rdata.folder,"returnsmonthly.rdata",sep=""))
+    si_ci_flds <- "COMPANY_ID, TICKER"
+    out <- load_fields_from_file("si_ci",rdata.folder,strDate,si_ci_flds)
+    #Get the next 1 month return
+    ret<-yret(InstallNum,1,"Y_1M")
+    if ((InstallNum+1)>length(sipbInstallDates)){
+        out$Y_1M<-NA
+    } else {
+        out<-merge(out,ret,by="COMPANY_ID",all.x=T)    
+    }
+    #Get the next 3 month return
+    ret<-yret(InstallNum,3,"Y_3M")
+    if ((InstallNum+3)>length(sipbInstallDates)){
+        out$Y_3M<-NA
+    } else {
+        out<-merge(out,ret,by="COMPANY_ID",all.x = T)        
+    }
+    # all.x=T keep companies that pass but don't have returns (avoid suvivorship bias)
+    ret<-yret(InstallNum,6,"Y_6M")
+    if ((InstallNum+6)>length(sipbInstallDates)){
+        out$Y_6M<-NA
+    } else {
+        out<-merge(out,ret,by="COMPANY_ID",all.x = T)    
+    }
+    ret<-yret(InstallNum,12,"Y_12M")
+    if ((InstallNum+12)>length(sipbInstallDates)){
+        out$Y_12M<-NA
+    } else {
+        out<-merge(out,ret,by="COMPANY_ID",all.x = T)    
+    }
+    out$INSTALLDT <- strDate
+    out2<-out[,c("COMPANY_ID","INSTALLDT")]
+    idx.dup<-duplicated(out2)
+    out<-out[!idx.dup,]
+    row.names(out)<-paste(out[,"COMPANY_ID"],out[,"INSTALLDT"],sep="")
+    return(out)
+}
+
+create_all_x_and_y_files<-function(){
+    if (!exists("returns.monthly")) load(paste(rdata.folder,"returnsmonthly.rdata",sep=""))
+    for (i in 1:length(sipbInstallDates)){
+        xdata<-create_xdata_file(i,"median")
+        save(xdata,file=paste(rdata.folder,"xdata",sipbInstallDates[i],".rdata",sep=""))
+        ydata<-create_ydata_file(i)
+        save(ydata,file=paste(rdata.folder,"ydata",sipbInstallDates[i],".rdata",sep=""))
+    }
+    rm(returns.monthly)
+    library(beepr)
+    beep(3)    
+}
