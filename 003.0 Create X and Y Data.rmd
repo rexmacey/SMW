@@ -1,0 +1,64 @@
+---
+title: "003.0 Create X (Features) and Y (Response) Data"
+author: "[Rex Macey](mailto:rex@macey.us)"
+date: "October 30, 2015"
+output: html_document
+---
+*Summary: Description of the X and Y data. More detail of the AAII data. Read the individual data files combine them into X (independent) and Y (dependent) files; add calculated (i.e., derived) fields (aka features); discuss missing data.*
+
+**Fields (Features) In Model**
+Crucial to the development of the model is the choice of features, which I sometimes refer to as X or independent variables and response variables which I sometimes refer to as Y or dependent variables.  Here we describe the raw data from AAII, what we use and what we discard as well as new variables created by transformation.
+
+**Response (Y) Variable** 
+For the response variable we consider the next 1, 3, 6 and 12 months returns. The purpose of extending the horizon to 12 months specifically is to consider a model that would be well suited for taxable investors in the U.S. who enjoy substantially lower tax rates on capital gains on stocks held for a year and a day. Whichever of these four is chosen leads to a regression-style model. I considered creating a categorical variable which would be TRUE if the stock achieved some threshold of return such as doubling within a year. This categorical variable would be conistent with the research in ["The Anatomy of a Stock Market Winner"](http://www.cfapubs.org/doi/pdf/10.2469/faj.v44.n2.16) article.  It's my thinking that creating such a categorical variable for our model would be discarding information and lead to a worse performing model. Not that it's necessarily bad (maybe it should be done), but such a categorical variable would change the model into one of anomoly detection.  
+
+**Overview of AAII data files**
+The [AAII Stock Investor Pro field definitions](http://www.aaii.com/stockinvestor/programinfo/proflddefs.pdf) run to 86 pages. 'Data Category' within that document indicates the dbf file in which the data are located. The following tables summarize the data available from AAII files.  The primary purpose is to help understand the code and models and to give an idea of the features that are available.
+
+DB File  | Contents                 | Example of Content
+-------- | --------------------     | --------------------------------
+SI_CI    | Company Info             | Name, Ticker
+SI_BSA   | Balance Sheet Annual     | A/P, Total Assets last 7 years
+SI_BSQ   | Balance Sheet Quarter    | A/P, Total Assets last 8 quarters
+SI_CFA   | Cash Flow Annual         | CF/Sh last 7 fiscal years
+SI_CFQ   | Cash Flow Quarter        | CF/Sh last 8 quarters
+SI_EE    | Earnings Estimates       | Median/High/Low est. for next year
+SI_GR    | Growth Rates             | 1,3,5 Yr growth in EPS
+SI_ISA   | Income Statement Annual  | EPS last 7 fiscal years
+SI_ISQ   | Income Statement Quarter | EPS last 8 fiscal quarters
+SI_RAT   | Ratios                   | Gross margin
+SI_PERC  | Percent Rank             | % Rank-Beta, 3Yr Avg PE
+SI_MLT   | Multiples                | Average P/B for 7 fiscal years
+SI_DATE  | Dates                    | Ending dates of fiscal years
+SI_VAL   | Valuations               | Valuation based on PE
+SI_PSD   | Price and Share Data     | Mkt Cap, Beta, Shares out 
+SI_PSDC  | Prices - Monthly Close   | For last 120 months
+SI_PSDD  | Prices - Dates           | For the 120 months and years
+
+The following data are not used in the model and are not imported (as of 10/30/2015). They could be used in the future. 
+
+DB File  | Contents                 | Example of Content
+-------- | --------------------     | --------------------------------
+SI_MGAVG | Sector Medians           | Medians of fields
+SI_MGAV2 | Industry Medians         | 
+SI_PSDH  | Prices - Monthly High    | For last 120 months
+SI_PSDL  | Prices - Monthly Low     | For last 120 months
+SI_PSDV  | Prices - Monthly Volume  | For last 120 months
+SI_PSDA  | Prices - Annual          | H/L/C for 7 Years
+DRPS     | Div. Reinvest. Plan      | Is one available
+SI_AVG   | Summary of Universe      | High/Low/Median/StdDev of fields
+
+Some fields in the AAII files do not make sense to use such as the city of the company's headquarters. Others make sense to use as part of a transformation.  Below are the 
+
+**Code Reference**
+
+[convertdbf2rdata.r](https://github.com/rexmacey/SMW/blob/master/convertdbf2rdata.r) converts the dbf files to rdata files.
+
+[CreateData.r](https://github.com/rexmacey/SMW/blob/master/CreateData.r) creates an rdata file for the x data and another for the y data.  Can do this for all install dates.  **Missing X values are replaced by the median of the other values.  Also, companies must have a share price of at least $5 per share and $250 million.**
+
+Below are summary data for the xdata file created from the SIP install of January 31,2003.  The NA values are not replaced to give an indication of the frequency of missing data.  The fields can be cross-referenced with the [AAII Stock Investor Pro field definitions](http://www.aaii.com/stockinvestor/programinfo/proflddefs.pdf) and in [CreateData.r](https://github.com/rexmacey/SMW/blob/master/CreateData.r) which includes the formulas for features which are derived. 
+```{r}
+source("CreateData.r")
+xdata<-create_xdata_file(2,NA)
+summary(xdata)
+```
