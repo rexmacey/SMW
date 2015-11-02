@@ -1,0 +1,65 @@
+---
+title: "004.0 The First Forests"
+author: "[Rex Macey](mailto:rex@macey.us)"
+date: "November 2, 2015"
+output: 
+  html_document: 
+    theme: journal
+---
+```{r echo=FALSE}
+source("SMWutilities.r")
+init_environment()
+load(paste(rdata.folder,"Results50RET_20151102.rdata",sep=""))
+```
+*Summary: We grow the first random forest and describe the performance. We explain why we create forests for each month individually.*
+
+At this point we have X and Y data files corresponding to the install dates of Stock Investor Pro (SIP).  Now we mildly modify those (e.g., remove company name) and create an XY file suitable for generating a random forest, or rather many forests. 
+
+My first attempts failed because I ran out of memory on my 8GB Windows 7 PC. This was combining many months of data into one file.  This is something to be revisited, but I came up with a different approach inspired by an academic paper. 
+
+In 1996 Robert Haugen and Nardin Baker published [The Commonality in The Determinants of Expected Stock Returns](http://www.quantitativeinvestment.com/documents/common.pdf). In 2004, the company I worked with became a client of Haugen's firm which produced expected returns/alphas on a universe of stocks using the concepts in the paper.  In summary, each month they would (linearly) regress the returns of the universe of stocks against 60+ factors representing risk, liquidity, price level, and more.  This cross-sectional analysis essentially produced payoffs for each factor for the month.  They would average the payoffs over 12 months. Then by multiplying the current exposures of each stock with this expected payoff for the factor they could produce an expected return for each stock (and I've simplified a bit).  
+
+They generally found that certain features consistently influenced future stock prices. These evolved through time as preferences shifted.  My expectation and experience was that when market dynamics shifted suddenly (e.g. from risk-on to risk-off), this approach underperformed as it took time for the payoffs to adjust. 
+
+With modern machine learning methods such as random forests, support vector machines and neural networks we can consider non-linear relationships. We can also consider more features.  
+
+With that article in mind, I created a random forest for each month's data.  Actually I created two forests for each month. One had the next month as a response variable, the other had the next 12 months as a response variable.  It took 2-3 minutes to grow a forest.  There where about 680 variables and roughly 3000 observations.  
+
+To produce an expected return for a stock, we average the predictions from 12 previous random forests.
+
+**Initial Results**
+The performance shown here isn't exhaustive.  This was a quick analysis to see if we could get a model together and generate results.  The initial results are reasonable and hold some promise.  There are  two sets of numbers, one associated with a one month look ahead and the other with a twelve month look ahead.
+
+Starting with the one month (1M) repsonse variable, we have 140 months of predictions. Explaining the 140 will clarify the out-of-sample testing. We started with 154 months of X data from the end of 2002 through September 2015. We use the forests associated with the first twelve months to create a prediction.  The twelvth month's forest used data from the 13th month to create the response variable. So we lose thirteen months on the front end.  We lose one month at the back end because with data through September, we do not know October's performance. So with a one month Y variable we have 154-12-1-1 = 140 months of predictions.  With the twelve month response variable we have 154-12-12-12 = 118 months of predictions.
+
+For this analysis we (arbitrarily) picked the 50 stocks with the highest predicted returns ("Long") and the 50 with the lowest ("Short"). We considered equal weighting ("EW"), inverse of risk weighting ("RW"), and weighting by market capitalization ("CW").  For benchmarking we compare to equal and capitalization weighted returns of the all the stocks from which the 50 were chosen.  The "Corr" column is the correlation between the predicted returns and the actual returns.  The remaining columns with the underscores are differences.  "CW_LvM" is the cap-weighted long return minus the cap-weighted market return. "EW_LvM" is the difference between equal weighted returns.  "CW_LvS", "RW_LvS", and "EW_LvS" are differences between the long and short portfolios.  
+
+### Summary of 1M 
+```{r}
+summary(Results1M)
+```
+The mean monthly return of the cap-weighted long portfolio is 122 bps about 85bps higher than the cap-weighted benchmark per month. In addition, the cap-weighted short portfolio short portfolio loses almost 77bps per month.  There appears to be discriminatory ability.  The long minus short return averaged almost 2 percent per month though the range (-37.4% to 29.0%) well exceeded the range of the market (-19.1% to 11.4%).  These returns do not take into account transactions costs nor dividends.
+
+### Summary of 12M 
+```{r}
+summary(Results12M[complete.cases(Results12M),])
+```
+While these values represent 12 month returns, it's important not to think of this as the performance over this period because of the overlapping aspect caused by forming a 12 month portfolio each month. The closest way to come to experiencing these returns would be to invest 1/12 of one's capital each month in the portfolio constructed that month.  
+
+The cap-weighted long does outperform by over 300 bps. The short portfolio has negative returns.  However, the range of some of the values is so high as to make me question their accuracy.  
+
+### Monthly Results of 1M
+Note that the row labels correspond to the first X data, not the Y data.  So for 20030103 which is the year-end data for 20002, we use twelve months of data for the random forests.  Since January of 2004 was used to produce the response for December 2003, the returns for the first row correspong to February of 2004.
+```{r}
+Results1M
+```
+### Monthly Results of 12M
+The first row labelled 20030103 corresponds to the first X data.  The results for that row actually show the performance of the twelve months ending December 2005.
+```{r}
+Results12M[complete.cases(Results12M),]
+```
+
+**Code Reference**
+
+[CreateForestFromEachInstall.r](https://github.com/rexmacey/SMW/blob/master/CreateForestFromEachInstall.r)
+[PredictFromForests.r](https://github.com/rexmacey/SMW/blob/master/PredictFromForests.r)

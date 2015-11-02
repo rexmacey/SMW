@@ -1,8 +1,8 @@
 # Create data files (X,Y)
 library(reshape2)
 setwd("C:/Users/Rex/Documents/Quant Trading/SMW")
-load("sipbInstallDates.rdata")
-rdata.folder <- "D:/SIPro/rdata/"
+source("SMWUtilities.r")
+init_environment()
 
 load(paste(rdata.folder,"id_translate.rdata",sep=""))  #see note in create_102to103_lookuptable() 
 
@@ -31,7 +31,6 @@ subforna<-function(x,subval){
     return(x)
 }
   
-
 get_si_selected_fld_list<-function(){ 
     # This function exists to put all x fields extracted from SI DBF in one place and to make
     # some of the other functions more readable.
@@ -702,6 +701,7 @@ create_xdata_file<-function(InstallNum=1,NAvalue=NA){
     idx.dup<-duplicated(out2)
     out<-out[!idx.dup,]
     row.names(out)<-paste(out[,"COMPANY_ID"],out[,"INSTALLDT"],sep="")
+    # todo replace Inf values here instead of later.
     return(out)
 }
 
@@ -760,3 +760,5 @@ create_all_x_and_y_files<-function(){
     library(beepr)
     beep(3)    
 }
+
+
