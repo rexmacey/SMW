@@ -7,8 +7,8 @@
 
 library(foreign)
 setwd("C:/Users/Rex/Documents/Quant Trading/SMW")
-load("sipbInstallDates.rdata")
-rdata.folder <- "D:/SIPro/rdata/"
+source("SMWutilities.r")
+init_environment()
 mainfolder <- "D:/SIPro"
 
 convertmostrecentdbf2rdata<-function(){
@@ -24,7 +24,7 @@ dbflocations <- function(strDate){
 
     ## FD: I feel you are adding unnecessary complexity by switching the names to lowercase
     ##     I would have kept things as-is, e.g. out$Dbfs instdead of out$dbfs
-    names(out) <- tolower(names(out))
+    names(out) <- tolower(subfolders)
 
     return(out) ## FD: This is now a named vector (more appropriate), not a list
 }
@@ -35,8 +35,8 @@ dbflocations <- function(strDate){
 
 loadfile<-function(fn, folder, prnt=FALSE, flds=NULL){
     # loads the fields (all fields if flds==NULL) from dbf fn in folder
-    data <- read.dbf(file = file.path(folder, fn), as.is = TRUE)
-    if (!is.null(flds)) data <- data[, flds, drop = FALSE)
+    data <- read.dbf(file = paste0(file.path(folder, fn),".dbf"), as.is = TRUE)
+    if (!is.null(flds)) data <- data[, flds, drop = FALSE]
     if (prnt) print(str(data))
     return(data)
 }
@@ -51,8 +51,8 @@ tonumeric<-function(data,varnames){
 convert_price_files_to_rdata<-function(strDate){ #convert a single pair of price and date files to rdata
     library(reshape)
     sipfolder<-dbflocations(strDate)
-    si_psdc <- loadfile("si_psdc.dbf", sipfolder$dbfs)
-    si_psdd <- loadfile("si_psdd.dbf", sipfolder$dbfs)
+    si_psdc <- loadfile("si_psdc", sipfolder["dbfs"])
+    si_psdd <- loadfile("si_psdd", sipfolder["dbfs"])
     price_data<-merge(si_psdc,si_psdd,by="COMPANY_ID")
     price_vars<-sprintf("PRICE_M%03d",seq(1:120))
     price_data <- tonumeric(price_data,price_vars)
