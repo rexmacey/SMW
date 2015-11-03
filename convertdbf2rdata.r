@@ -3,6 +3,8 @@
 # Append an entry to sipbInstallDates which is in the working directory and save the .rdata file.
 # Run convertmostrecentdbf2rdata function
 
+## FD: Comments with a double pounds and "FD" (Florent Delmotte) are for code review only, feel free to delete after review.
+
 library(foreign)
 setwd("C:/Users/Rex/Documents/Quant Trading/SMW")
 load("sipbInstallDates.rdata")
@@ -10,28 +12,32 @@ rdata.folder <- "D:/SIPro/rdata/"
 mainfolder <- "D:/SIPro"
 
 convertmostrecentdbf2rdata<-function(){
-    strDate<-sipbInstallDates[length(sipbInstallDates)]
+    strDate <- tail(sipbInstallDates, 1)    ## FD: use tail() last element.
     convert_1install_dbf_to_rdata(strDate)
     convert_price_files_to_rdata(strDate)
 }
 
 dbflocations <- function(strDate){
-    out <- list()
-    out$dbfs <- paste(mainfolder,"/SIP",strDate,"/Dbfs",sep="")
-    out$datadict <- paste(mainfolder,"/SIP",strDate,"/Datadict",sep="")
-    out$static <- paste(mainfolder,"/SIP",strDate,"/Static",sep="")
-    return(out)
+    datepath <- paste0(mainfolder, "/SIP", strDate)
+    subfolders <- c("Dbfs", "Datadict", "Static")
+    out <- file.path(datepath, subfolders)
+
+    ## FD: I feel you are adding unnecessary complexity by switching the names to lowercase
+    ##     I would have kept things as-is, e.g. out$Dbfs instdead of out$dbfs
+    names(out) <- tolower(names(out))
+
+    return(out) ## FD: This is now a named vector (more appropriate), not a list
 }
-loadfile<-function(fn,folder,prnt=T,flds=NULL){
+
+## FD: Recommend you never use T or F as shortcuts for TRUE and FALSE since T and F can be overwritten
+##     e.g. your code could do a lot of weird and hard to debug things if your code had T <- 0 or F <- 1 somewhere
+##     Instead, TRUE and FALSE are built-in constants so they can't be overwritten.
+
+loadfile<-function(fn, folder, prnt=FALSE, flds=NULL){
     # loads the fields (all fields if flds==NULL) from dbf fn in folder
-    if (is.null(flds)){
-        data<-read.dbf(file=paste(folder,"/",fn,sep=""),as.is = T)    
-    } else {
-        data<-read.dbf(file=paste(folder,"/",fn,sep=""),as.is = T)[,flds]
-    }
-    if(prnt){
-        print(str(data))
-    }
+    data <- read.dbf(file = file.path(folder, fn), as.is = TRUE)
+    if (!is.null(flds)) data <- data[, flds, drop = FALSE)
+    if (prnt) print(str(data))
     return(data)
 }
 
@@ -45,10 +51,8 @@ tonumeric<-function(data,varnames){
 convert_price_files_to_rdata<-function(strDate){ #convert a single pair of price and date files to rdata
     library(reshape)
     sipfolder<-dbflocations(strDate)
-    si_psdc <- loadfile("si_psdc.dbf", sipfolder$dbfs,F)
-    si_psdd <- loadfile("si_psdd.dbf", sipfolder$dbfs,F)
-    #var<-paste("pr_",strDate,sep="")
-    #assign(var,merge(si_psdc,si_psdd,by="COMPANY_ID"))
+    si_psdc <- loadfile("si_psdc.dbf", sipfolder$dbfs)
+    si_psdd <- loadfile("si_psdd.dbf", sipfolder$dbfs)
     price_data<-merge(si_psdc,si_psdd,by="COMPANY_ID")
     price_vars<-sprintf("PRICE_M%03d",seq(1:120))
     price_data <- tonumeric(price_data,price_vars)
@@ -61,36 +65,42 @@ convert_all_price_files_to_r<-function(){  #convert all files
 }
 
 convert_1install_dbf_to_rdata<-function(strDate){  #all files except price files
-    sipfolder<-dbflocations(strDate)
-    si_ci <- loadfile("si_ci.dbf", sipfolder$static,F)
-    si_mlt <- cleanfile(loadfile("si_mlt.dbf", sipfolder$dbfs,F))
-    si_isq <- cleanfile(loadfile("si_isq.dbf", sipfolder$static,F))
-    si_gr <- cleanfile(loadfile("si_gr.dbf", sipfolder$dbfs,F))
-    si_perc <- cleanfile(loadfile("si_perc.dbf", sipfolder$dbfs,F))
-    si_rat <- cleanfile(loadfile("si_rat.dbf", sipfolder$dbfs,F))
-    si_psd <- cleanfile(loadfile("si_psd.dbf", sipfolder$dbfs,F))
-    si_isa <- cleanfile(loadfile("si_isa.dbf", sipfolder$static,F))
-    save(si_ci,file=paste(mainfolder,"/rdata/si_ci_",strDate,".rdata",sep=""))
-    save(si_mlt,file=paste(mainfolder,"/rdata/si_mlt_",strDate,".rdata",sep=""))
-    save(si_isq,file=paste(mainfolder,"/rdata/si_isq_",strDate,".rdata",sep=""))
-    save(si_gr,file=paste(mainfolder,"/rdata/si_gr_",strDate,".rdata",sep=""))
-    save(si_perc,file=paste(mainfolder,"/rdata/si_perc_",strDate,".rdata",sep=""))
-    save(si_rat,file=paste(mainfolder,"/rdata/si_rat_",strDate,".rdata",sep=""))
-    save(si_psd,file=paste(mainfolder,"/rdata/si_psd_",strDate,".rdata",sep=""))
-    save(si_isa,file=paste(mainfolder,"/rdata/si_isa_",strDate,".rdata",sep=""))
-    si_ee <- cleanfile(loadfile("si_ee.dbf", sipfolder$dbfs,F))
-    si_bsa <- cleanfile(loadfile("si_bsa.dbf", sipfolder$static,F))
-    si_bsq <- cleanfile(loadfile("si_bsq.dbf", sipfolder$static,F))
-    si_val <- cleanfile(loadfile("si_val.dbf", sipfolder$dbfs,F))
-    si_cfa <- cleanfile(loadfile("si_cfa.dbf", sipfolder$static,F))
-    si_cfq <- cleanfile(loadfile("si_cfq.dbf", sipfolder$static,F))
-    save(si_ee,file=paste(mainfolder,"/rdata/si_ee_",strDate,".rdata",sep=""))
-    save(si_bsa,file=paste(mainfolder,"/rdata/si_bsa_",strDate,".rdata",sep=""))
-    save(si_bsq,file=paste(mainfolder,"/rdata/si_bsq_",strDate,".rdata",sep=""))
-    save(si_val,file=paste(mainfolder,"/rdata/si_val_",strDate,".rdata",sep=""))
-    save(si_cfa,file=paste(mainfolder,"/rdata/si_cfa_",strDate,".rdata",sep=""))
-    save(si_cfq,file=paste(mainfolder,"/rdata/si_cfq_",strDate,".rdata",sep=""))
+    sipfolder <- dbflocations(strDate)
+
+    ## FD: This will be a lot easier to maintain. It could stay here or go into
+    ##     a csv config file.
+    ##     I included a NEED_CLEAN column because you apparenlty did not
+    ##     use cleanfile on ss_ci. I don't know if this was a mistake or intentional.
+    to_process <- read.table(text =
+      "NAME     DIR       NEED_CLEAN
+       ci       static    FALSE
+       mlt      dbfs      TRUE
+       isq      static    TRUE
+       gr       dbfs      TRUE
+       perc     dbfs      TRUE
+       rat      dbfs      TRUE
+       psd      dbfs      TRUE
+       isa      static    TRUE
+       ee       dbfs      TRUE
+       bsa      static    TRUE
+       bsq      static    TRUE
+       val      dbfs      TRUE
+       cfa      static    TRUE
+       cfq      static    TRUE", header = TRUE, stringsAsFactors = FALSE)
+
+    files <- sprintf("si_%s", to_process$NAME)
+    dirs  <- sipfolder[to_process$DIR]
+    rdata <- sprintf("%s/rdata/si_%s_%s.rdata", mainfolder, to_process$NAME, strDate)
+    need_clean <- to_process$NEED_CLEAN
+
+    ## FD: a for loop will be more memory efficient
+    for (i in seq_along(files)) {
+      data <- loadfile(files[i], dirs[i])
+      if (need_clean[i]) data <- cleanfile(data)
+      save(data, file = rdata[i])
+    }
 }
+
 convert_all_dbf_files_to_r<-function(){  #convert all files
     lapply(sipbInstallDates,convert_1install_dbf_to_rdata)
 }
