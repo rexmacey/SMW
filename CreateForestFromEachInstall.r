@@ -1,8 +1,9 @@
-CreateRF <- function(i,Y_M,YType="RET") { 
+CreateRF <- function(i,Y_M=1,YType="RET") { 
     #YType may be RET for a return or SHRP for return/standard deviation
     library(randomForest)
     source("SMWUtilities.r")
     init_environment()
+    strDate<-sipbInstallDates[i]
     load(paste(rdata.folder,"xdata",sipbInstallDates[i],".rdata",sep = "")) # load xdata file
     load(paste(rdata.folder,"ydata",sipbInstallDates[i],".rdata",sep = "")) # load ydata file
     #combine xdata and ydata files into 1 file.
@@ -34,19 +35,24 @@ CreateRF <- function(i,Y_M,YType="RET") {
         }
     }
     rf1 <- randomForest(YRet ~ .,data = xy.df,ntree = 150)
+    fname.prefix<-paste0(rdata.folder,"rf",Y_M,"M",YType)
+    save(rf1,file = paste0(fname.prefix,strDate,".rdata"))
     return(rf1)
 }
 
 create_forest_from_each_install <- function(Y_M = 1,YType="RET") {
-    setwd("C:/Users/Rex/Documents/Quant Trading/SMW")
-    load("sipbInstallDates.rdata")
-    rdata.folder <- "D:/SIPro/rdata/"
-    fname.prefix<-paste(rdata.folder,"rf",Y_M,"M",YType,sep = "")
+#    lapply(seq(1:(length(sipbInstallDates) - Y_M)),CreateRF,Y_M=Y_M,YType=YType)
+#     setwd("C:/Users/Rex/Documents/Quant Trading/SMW")
+#     load("sipbInstallDates.rdata")
+#     rdata.folder <- "D:/SIPro/rdata/"
+#     fname.prefix<-paste(rdata.folder,"rf",Y_M,"M",YType,sep = "")
+    source("SMWUtilities.r")
+    init_environment()
+    set.seed(101) # fore reproducibility
     for (i in 1:(length(sipbInstallDates) - Y_M)) {
-        print(paste(Y_M,i))
-        rf1 <- CreateRF(i,Y_M,YType)
-        save(rf1,file = paste(fname.prefix,sipbInstallDates[i],".rdata",sep = ""))    
-    }
+         print(paste(Y_M,i))
+         rf1 <- CreateRF(i,Y_M,YType)
+     }
 }
 
 

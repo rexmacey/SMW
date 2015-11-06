@@ -4,16 +4,15 @@ setwd("C:/Users/Rex/Documents/Quant Trading/SMW")
 source("SMWUtilities.r")
 init_environment()
 
-load(paste(rdata.folder,"id_translate.rdata",sep=""))  #see note in create_102to103_lookuptable() 
+load(paste(rdata.folder,"id_translate.rdata",sep=""))  #see note in create_103to104_lookuptable() 
 
 load_fields_from_file<-function(fn,rdata.folder,strDate,fldlist=NULL){
     load(paste(rdata.folder,fn,"_",strDate,".rdata",sep=""))
-    out<-get(ls(pattern="si_")) # returns the object 
     if (is.null(fldlist)){ #load all fields
-        return(out)
+        return(data)
     } else {
         fldlist<-unlist(strsplit(fldlist,", "))
-        return(out[,fldlist])
+        return(data[,fldlist])
     }
 }
 
@@ -148,9 +147,9 @@ get_ci_data<-function(strDate){ # get company information from sip data files
     }
     levels(out$SP) <- c("400","500","600","x") # needed to ensure consistency across all installs
     levels(out$EXCHANGE) <- c("A","M","N","O","x")
+    levels(out$IND_2_DIG)<-c("01","02","03","04","05","06","07","08","09","10","11","12","x")
     out$ADR<-factor(out$ADR)
     out$OPTIONABLE<-factor(out$OPTIONABLE)
-    
     return(out)  # in x exclude TICKER, COMPANY
 }
 get_mlt_data<-function(strDate,NAvalue=NA){ # get multiples data from sip data files
@@ -584,20 +583,22 @@ get_perc_data<-function(strDate,NAvalue=NA){
 yret<-function(InstallNum, nmonths,varname="RET"){
     # calculate the returns over the next nmonths AFTER InstallNum (not beginning with InstallNum)
     # in other words, calc the nmonth return after InstallNum
+    iBefore<-103
+    iAfter<-104
     if ((InstallNum+nmonths)>length(sipbInstallDates)){
         return(NA)  # this would be an error, trying to get return beyond what we have data for
     }
-    if (InstallNum<=102 & (InstallNum+nmonths)>102){
-        # we need to translate company_id because they change from install 102 to 103
+    if (InstallNum<=iBefore & (InstallNum+nmonths)>iBefore){
+        # we need to translate company_id because they change from install iBefore to iAfter
         # let's do all returns before the company_id changes. 2 cases
-        if (InstallNum<102){  # the install number is less than 102 so we can use yret_sub
-            out.bef<-yret_sub(InstallNum+1,102,"RET")
-        } else { # InstallNum is 102 and we need old company IDs. There is no return.
-            out.bef<-subset(returns.monthly,INSTALLDT==sipbInstallDates[102])[,c("COMPANY_ID","RET")]
+        if (InstallNum<iBefore){  # the install number is less than iBefore so we can use yret_sub
+            out.bef<-yret_sub(InstallNum+1,iBefore,"RET")
+        } else { # InstallNum is iBefore and we need old company IDs. There is no return.
+            out.bef<-subset(returns.monthly,INSTALLDT==sipbInstallDates[iBefore])[,c("COMPANY_ID","RET")]
             out.bef$RET<-0
         }
         # let's do all return after the id changes
-        out.aft<-yret_sub(103,InstallNum+nmonths,"RET")
+        out.aft<-yret_sub(iAfter,InstallNum+nmonths,"RET")
         # now we merge
         temp.bef<-merge(out.bef,id_translate,by.x="COMPANY_ID",by.y = "COMPANY_ID.x")
         temp.aft<-merge(out.aft,id_translate,by.x="COMPANY_ID",by.y = "COMPANY_ID.y")
@@ -624,16 +625,18 @@ yret_sub<-function(InstallStartNum,InstallEndNum,varname="RET"){
     return(out)
 }
 
-create_102to103_lookuptable<-function(){
-    # Company IDs change from the 20110630 [#102] install to 20110729 [#103].  This impacts
+create_103to104_lookuptable<-function(){
+    # Company IDs change from the 20110630 [#103] install to 20110729 [#104].  This impacts
     # connecting companies with returns.  To handle this, we create a translation/lookup table
     # between those to months.  First we create a data frame for the lookup. This table should be used whenever
-    # one needs a return from install #103+ for a install on or before #102.  So if #100 needs the next 12 months of 
-    # return, it will get returns from #101 and #102 without the table and #103-#112 with the table
+    # one needs a return from install #104+ for a install on or before #103.  So if #100 needs the next 12 months of 
+    # return, it will get returns from #101 to #103 without the table and #104-#112 with the table
     # this produces id_translate_table so one can lookup old id and find new one
+    iBefore<-103
+    iAfter<-104
     fldlist<-c("COMPANY_ID","COMPANY","TICKER")
-    X<-load_fields_from_file("si_ci",rdata.folder,sipbInstallDates[102],fldlist)
-    Y<-load_fields_from_file("si_ci",rdata.folder,sipbInstallDates[103],fldlist)
+    X<-load_fields_from_file("si_ci",rdata.folder,sipbInstallDates[iBefore],fldlist)
+    Y<-load_fields_from_file("si_ci",rdata.folder,sipbInstallDates[iAfter],fldlist)
     # if company name + ticker match, we are good 97.3% 
     X$NAMETICK<-paste(X$COMPANY,X$TICKER)
     Y$NAMETICK<-paste(Y$COMPANY,Y$TICKER)
@@ -685,24 +688,25 @@ create_xdata_file<-function(InstallNum=1,NAvalue=NA){
     if (InstallNum>length(sipbInstallDates)) return(NA)
     strDate<-sipbInstallDates[InstallNum]
     
-    out <- get_ci_data(strDate)
-    out <- merge(out,get_psd_data(strDate,NAvalue),by="COMPANY_ID")
+    xdata <- get_ci_data(strDate)
+    xdata <- merge(xdata,get_psd_data(strDate,NAvalue),by="COMPANY_ID")
     
-    out <- out[out$PRICE>=5 & out$MKTCAP>=250,]  # filter for prices at least $5 and market cap $250 million
+    xdata <- xdata[xdata$PRICE>=5 & xdata$MKTCAP>=250,]  # filter for prices at least $5 and market cap $250 million
     
-    out <- merge(out,get_perc_data(strDate,NAvalue),by="COMPANY_ID")
-    out <- merge(out,get_mlt_data(strDate,NAvalue), by="COMPANY_ID")
-    out <- merge(out,get_gr_data(strDate,NAvalue),by="COMPANY_ID")
-    out <- merge(out,get_rat_data(strDate,NAvalue),by="COMPANY_ID")
-    out <- merge(out,get_ee_data(strDate,NAvalue),by="COMPANY_ID")
-    out$INSTALLDT <- strDate
+    xdata <- merge(xdata,get_perc_data(strDate,NAvalue),by="COMPANY_ID")
+    xdata <- merge(xdata,get_mlt_data(strDate,NAvalue), by="COMPANY_ID")
+    xdata <- merge(xdata,get_gr_data(strDate,NAvalue),by="COMPANY_ID")
+    xdata <- merge(xdata,get_rat_data(strDate,NAvalue),by="COMPANY_ID")
+    xdata <- merge(xdata,get_ee_data(strDate,NAvalue),by="COMPANY_ID")
+    xdata$INSTALLDT <- strDate
     
-    out2<-out[,c("COMPANY_ID","INSTALLDT")]
-    idx.dup<-duplicated(out2)
-    out<-out[!idx.dup,]
-    row.names(out)<-paste(out[,"COMPANY_ID"],out[,"INSTALLDT"],sep="")
+    xdata2<-xdata[,c("COMPANY_ID","INSTALLDT")]
+    idx.dup<-duplicated(xdata2)
+    xdata<-xdata[!idx.dup,]
+    row.names(xdata)<-paste(xdata[,"COMPANY_ID"],xdata[,"INSTALLDT"],sep="")
     # todo replace Inf values here instead of later.
-    return(out)
+    save(xdata,file=paste0(rdata.folder,"xdata",strDate,".rdata"))
+    return(xdata)
 }
 
 create_ydata_file<-function(InstallNum=1){
@@ -712,53 +716,54 @@ create_ydata_file<-function(InstallNum=1){
     strDate<-sipbInstallDates[InstallNum]
     if (!exists("returns.monthly")) load(paste(rdata.folder,"returnsmonthly.rdata",sep=""))
     si_ci_flds <- "COMPANY_ID, TICKER"
-    out <- load_fields_from_file("si_ci",rdata.folder,strDate,si_ci_flds)
+    ydata <- load_fields_from_file("si_ci",rdata.folder,strDate,si_ci_flds)
     #Get the next 1 month return
     ret<-yret(InstallNum,1,"Y_1M")
     if ((InstallNum+1)>length(sipbInstallDates)){
-        out$Y_1M<-NA
+        ydata$Y_1M<-NA
     } else {
-        out<-merge(out,ret,by="COMPANY_ID",all.x=T)    
+        ydata<-merge(ydata,ret,by="COMPANY_ID",all.x=T)    
     }
     #Get the next 3 month return
     ret<-yret(InstallNum,3,"Y_3M")
     if ((InstallNum+3)>length(sipbInstallDates)){
-        out$Y_3M<-NA
+        ydata$Y_3M<-NA
     } else {
-        out<-merge(out,ret,by="COMPANY_ID",all.x = T)        
+        ydata<-merge(ydata,ret,by="COMPANY_ID",all.x = T)        
     }
     # all.x=T keep companies that pass but don't have returns (avoid suvivorship bias)
     ret<-yret(InstallNum,6,"Y_6M")
     if ((InstallNum+6)>length(sipbInstallDates)){
-        out$Y_6M<-NA
+        ydata$Y_6M<-NA
     } else {
-        out<-merge(out,ret,by="COMPANY_ID",all.x = T)    
+        ydata<-merge(ydata,ret,by="COMPANY_ID",all.x = T)    
     }
     ret<-yret(InstallNum,12,"Y_12M")
     if ((InstallNum+12)>length(sipbInstallDates)){
-        out$Y_12M<-NA
+        ydata$Y_12M<-NA
     } else {
-        out<-merge(out,ret,by="COMPANY_ID",all.x = T)    
+        ydata<-merge(ydata,ret,by="COMPANY_ID",all.x = T)    
     }
-    out$INSTALLDT <- strDate
-    out2<-out[,c("COMPANY_ID","INSTALLDT")]
-    idx.dup<-duplicated(out2)
-    out<-out[!idx.dup,]
-    row.names(out)<-paste(out[,"COMPANY_ID"],out[,"INSTALLDT"],sep="")
-    return(out)
+    ydata$INSTALLDT <- strDate
+    ydata2<-ydata[,c("COMPANY_ID","INSTALLDT")]
+    idx.dup<-duplicated(ydata2)
+    ydata<-ydata[!idx.dup,]
+    row.names(ydata)<-paste(ydata[,"COMPANY_ID"],ydata[,"INSTALLDT"],sep="")
+    save(ydata,file=paste0(rdata.folder,"ydata",strDate,".rdata"))
+    return(ydata)
 }
 
 create_all_x_and_y_files<-function(){
-    if (!exists("returns.monthly")) load(paste(rdata.folder,"returnsmonthly.rdata",sep=""))
+    load(paste(rdata.folder,"returnsmonthly.rdata",sep=""))
     for (i in 1:length(sipbInstallDates)){
-        xdata<-create_xdata_file(i,"median")
-        save(xdata,file=paste(rdata.folder,"xdata",sipbInstallDates[i],".rdata",sep=""))
+        xdata<-create_xdata_file(i,NAvalue="median")
         ydata<-create_ydata_file(i)
-        save(ydata,file=paste(rdata.folder,"ydata",sipbInstallDates[i],".rdata",sep=""))
     }
-    rm(returns.monthly)
-    library(beepr)
-    beep(3)    
 }
+
+#create_all_x_and_y_files<-function(){  #Not used because this seems to use too much memory
+#    lapply(seq_along(sipbInstallDates),create_xdata_file,NAvalue="median")
+#    lapply(seq_along(sipbInstallDates),create_ydata_file)
+#}
 
 

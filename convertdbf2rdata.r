@@ -17,17 +17,7 @@ convertmostrecentdbf2rdata<-function(){
     convert_price_files_to_rdata(strDate)
 }
 
-dbflocations <- function(strDate){
-    datepath <- paste0(mainfolder, "/SIP", strDate)
-    subfolders <- c("Dbfs", "Datadict", "Static")
-    out <- file.path(datepath, subfolders)
 
-    ## FD: I feel you are adding unnecessary complexity by switching the names to lowercase
-    ##     I would have kept things as-is, e.g. out$Dbfs instdead of out$dbfs
-    names(out) <- tolower(subfolders)
-
-    return(out) ## FD: This is now a named vector (more appropriate), not a list
-}
 
 ## FD: Recommend you never use T or F as shortcuts for TRUE and FALSE since T and F can be overwritten
 ##     e.g. your code could do a lot of weird and hard to debug things if your code had T <- 0 or F <- 1 somewhere
@@ -102,7 +92,15 @@ convert_1install_dbf_to_rdata<-function(strDate){  #all files except price files
 }
 
 convert_all_dbf_files_to_r<-function(){  #convert all files
-    lapply(sipbInstallDates,convert_1install_dbf_to_rdata)
+    library(foreign)
+    setwd("C:/Users/Rex/Documents/Quant Trading/SMW")
+    source("SMWutilities.r")
+    init_environment()
+    mainfolder <- "D:/SIPro"
+    # lapply(sipbInstallDates,convert_1install_dbf_to_rdata)  #uses too much memory
+    for (i in sipbInstallDates){
+        convert_1install_dbf_to_rdata(i)
+    }
 }
 
 cleanfile<-function(df){

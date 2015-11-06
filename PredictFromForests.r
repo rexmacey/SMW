@@ -111,20 +111,8 @@ predict_from_random_forest <- function(Y_M = 1,top.n = 50,YType="RET") {
     out$CW_LvS <- out$CWLong - out$CWShort
     out$RW_LvS <- out$RWLong - out$RWShort
     out$EW_LvS <- out$EWLong - out$EWShort
-    
+    Predict<-list(top.n=top.n,sipbInstallDates=sipbInstallDates,Results=out[complete.cases(out),],YType=YType)
+    save(Predict,
+         file = paste0(rdata.folder,"Results",Y_M,"M",top.n,YType,"_",format(Sys.Date(),'%Y%m%d'),".rdata"))
     return(out)
 }
-
-source("SMWutilities.r")
-init_environment()
-top.n<-50
-YType <- "RET" #valid values are RET or SHRP
-Results1M <- predict_from_random_forest(1,top.n,YType)
-Results12M <- predict_from_random_forest(12,top.n,YType)
-setwd("C:/Users/Rex/Documents/Quant Trading/SMW")
-save(top.n,sipbInstallDates,Results1M,Results12M,YType,
-     file = paste(rdata.folder,"Results",top.n,YType,"_",format(Sys.Date(),'%Y%m%d'),".rdata",sep = ""))
-summary(Results1M)
-summary(Results12M)
-library(beepr)
-beep(3)
