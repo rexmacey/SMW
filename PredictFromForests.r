@@ -1,4 +1,5 @@
 predict_from_random_forest <- function(Y_M = 1,top.n = 50,YType="RET") {
+    library(SDMTools)
     library(randomForest)
     source("SMWutilities.r")
     init_environment()
@@ -75,34 +76,34 @@ predict_from_random_forest <- function(Y_M = 1,top.n = 50,YType="RET") {
         }
         
         y.pred <- rep(0,nrow(y.df))
-        for (i in 1:12) {
+        for (i in 1:12) { # average prediction of last 12 forests
             y.pred <- y.pred + predict(rf.lst[[i]],x.df,type = "response") / 12
         }
         
         sort.idx <- order(y.pred,decreasing = TRUE)[1:top.n]
         yy <- data.frame(pred = y.pred,act = y.df)[sort.idx,]
         out[j,"EWLong"] <- mean(yy[,"YRet"])
-        wts <- 1 / x.df$PRCHG_SD3Y[sort.idx]
-        wts <- wts / sum(wts)
-        out[j,"RWLong"] <- sum(wts * yy[,"YRet"])
-        wts <- x.df$MKTCAP[sort.idx]
-        wts <- wts / sum(wts)
-        out[j,"CWLong"] <- sum(wts * yy[,"YRet"])
+        out[j,"RWLong"] <- wt.mean(yy[,"YRet"],1 / x.df$PRCHG_SD3Y[sort.idx])
+        out[j,"CWLong"] <-  wt.mean(yy[,"YRet"],x.df$MKTCAP[sort.idx])
+        x.mkt.wtd.mean<-apply(x.df[,6:ncol(x.df)],2,wt.mean,wt=x.df$MKTCAP)
+        x.mkt.wtd.sd<-apply(x.df[,6:ncol(x.df)],2,wt.sd,wt=x.df$MKTCAP)
+        x.mkt.mean<-apply(x.df[,6:ncol(x.df)],2,mean)
+        x.mkt.sd<-apply(x.df[,6:ncol(x.df)],2,sd)
+        
+        x.long.wtd.mean<-apply(x.df[sort.idx,6:ncol(x.df)],2,wt.mean,wt=x.df$MKTCAP[sort.idx])
+        x.long.mean<-apply(x.df[sort.idx,6:ncol(x.df)],2,mean)
         
         sort.idx <- order(y.pred,decreasing = FALSE)[1:top.n]
         yy <- data.frame(pred = y.pred,act = y.df)[sort.idx,]
         out[j,"EWShort"] <- mean(yy[,"YRet"])
-        wts <- 1 / x.df$PRCHG_SD3Y[sort.idx]
-        wts <- wts / sum(wts)
-        out[j,"RWShort"] <- sum(wts * yy[,"YRet"])
-        wts <- x.df$MKTCAP[sort.idx]
-        wts <- wts / sum(wts)
-        out[j,"CWShort"] <- sum(wts * yy[,"YRet"])
+        out[j,"RWShort"] <- wt.mean(yy[,"YRet"],1 / x.df$PRCHG_SD3Y[sort.idx])
+        out[j,"CWShort"] <- sum(wts.cap * yy[,"YRet"])
+        x.short.wtd.mean<-apply(x.df[sort.idx,6:ncol(x.df)],2,wt.mean,wt=x.df$MKTCAP[sort.idx])
+        x.short.mean<-apply(x.df[sort.idx,6:ncol(x.df)],2,mean)
         
         out[j,"EWMkt"] <- mean(y.df$YRet)
-        out[j,"CWMkt"] <- sum((xy.df$MKTCAP/sum(xy.df$MKTCAP))*xy.df[,yvar(Y_M)])
+        out[j,"CWMkt"] <- wt.mean(xy.df[,yvar(Y_M)],xy.df$MKTCAP)
         out[j,"Corr"] <- cor(y.pred,y.df$YRet)
-        
     }
     out <- data.frame(out)
     out$CW_LvM <- out$CWLong - out$CWMkt
@@ -111,7 +112,10 @@ predict_from_random_forest <- function(Y_M = 1,top.n = 50,YType="RET") {
     out$CW_LvS <- out$CWLong - out$CWShort
     out$RW_LvS <- out$RWLong - out$RWShort
     out$EW_LvS <- out$EWLong - out$EWShort
-    Predict<-list(top.n=top.n,sipbInstallDates=sipbInstallDates,Results=out[complete.cases(out),],YType=YType)
+    x.stats<-list(x.mkt.wtd.mean=x.mkt.wtd.mean,x.mkt.wtd.sd=x.mkt.wtd.sd,x.mkt.mean=x.mkt.mean,
+                  x.mkt.sd=x.mkt.sd,x.long.wtd.mean=x.long.wtd.mean,x.long.mean=x.long.mean,
+                  x.short.wtd.mean=x.short.wtd.mean,x.short.mean=x.short.mean)
+    Predict<-list(top.n=top.n,sipbInstallDates=sipbInstallDates,Results=out[complete.cases(out),],YType=YType,x.stats)
     save(Predict,
          file = paste0(rdata.folder,"Results",Y_M,"M",top.n,YType,"_",format(Sys.Date(),'%Y%m%d'),".rdata"))
     return(out)
