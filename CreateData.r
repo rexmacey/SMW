@@ -130,7 +130,11 @@ get_si_selected_fld_list<-function(){
         "RMKTCAP","RFLOAT","RSHRINSTN","RSHRINST","RSHRINSD","REPS_EG5","ROPM_12M","ROPM_Y1",
         "ROPM_Y2","ROPM_Y3","ROPM_Y4","ROPM_Y5","RTIE_12M","RTIE_Y1","RTIE_Y2","RTIE_Y3",
         "RTIE_Y4","RTIE_Y5","RARTURN_12","RARTURN_Y1","RARTURN_Y2","RARTURN_Y3","RARTURN_Y4","RARTURN_Y5",
-        "REPSDC_G1F","REPSDC_G3F","REPSDC_G5F","REPSDC_G7F","REPSDC_G1T")    
+        "REPSDC_G1F","REPSDC_G3F","REPSDC_G5F","REPSDC_G7F","REPSDC_G1T")
+    si_selected_flds[["isa"]] <- c(
+        "COMPANY_ID","SALES_Y1","SALES_Y3","SALES_Y5","CGS_Y1","CGS_Y3","CGS_Y5")
+    si_selected_flds[["bsa"]] <- c(
+        "COMPANY_ID","ASSETS_Y1","ASSETS_Y3","ASSETS_Y5")
     return(si_selected_flds)
 }
 get_ci_data<-function(strDate){ # get company information from sip data files
@@ -324,8 +328,9 @@ get_rat_data<-function(strDate,NAvalue=NA){ # get ratio data from sip files
     out$CURR_Y1 <- subforna(out$CURR_Y1,NAvalue)
     
     out$ERBV <- subforna(out$ERBV,NAvalue)
-    out$FSCORE_12M <- subforna(out$FSCORE_12M,0)
-    out$FSCORE_Y1 <- subforna(out$FSCORE_Y1,0)
+    out$FSCORE_12M <- subforna(out$FSCORE_12M,NAvalue)
+    out$FSCORE_Y1 <- subforna(out$FSCORE_Y1,NAvalue)
+    out$F_12M_Y1 <- subforna(out$FSCORE_12M -out$FSCORE_Y1,NAvalue)
     
     out$GPM_12M_A5Y <- subforna(out$GPM_12M - out$GPM_A5Y,NAvalue)
     out$GPM_12M_Y1 <- subforna(out$GPM_12M - out$GPM_Y1,NAvalue)
@@ -491,7 +496,8 @@ get_rat_data<-function(strDate,NAvalue=NA){ # get ratio data from sip files
             "ROE_Y2","ROE_Y3","ROE_Y4","ROE_Y5","ROE_Y6","ROE_Y7",
             "TA_TRN_Y2","TA_TRN_Y3","TA_TRN_Y4","TA_TRN_Y5","TA_TRN_Y6","TA_TRN_Y7",
             "TIE_Y2","TIE_Y3","TIE_Y4","TIE_Y5","TIE_Y6","TIE_Y7",
-            "TL_TA_Y2","TL_TA_Y3","TL_TA_Y4","TL_TA_Y5","TL_TA_Y6","TL_TA_Y7")) {
+            "TL_TA_Y2","TL_TA_Y3","TL_TA_Y4","TL_TA_Y5","TL_TA_Y6","TL_TA_Y7",
+            "FSCORE_Y3","FSCORE_Y5")) {
         out[,x] <- NULL
     }
     return(out)
@@ -577,6 +583,29 @@ get_perc_data<-function(strDate,NAvalue=NA){
     for (x in si_perc_flds){
         out[,x] <- subforna(out[,x],NAvalue)
     }    
+    return(out)
+}
+get_gross_profit<-function(strDate,NAvalue=NA){
+    si_flds <- get_si_selected_fld_list()[["isa"]]
+    isa<-load_fields_from_file("si_isa",rdata.folder,strDate,si_flds)
+    si_flds <- get_si_selected_fld_list()[["bsa"]]
+    bsa<-load_fields_from_file("si_bsa",rdata.folder,strDate,si_flds)
+    temp<-merge(isa,bsa,by="COMPANY_ID")
+    
+    out<-data.frame(temp$COMPANY_ID)
+    colnames(out)<-"COMPANY_ID"
+    out$GPMA_Y1 <- (temp$SALES_Y1 - temp$CGS_Y1)/temp$ASSETS_Y1
+    out$GPMA_Y3 <- (temp$SALES_Y3 - temp$CGS_Y3)/temp$ASSETS_Y3
+    out$GPMA_Y5 <- (temp$SALES_Y5 - temp$CGS_Y5)/temp$ASSETS_Y5
+    out$GPMA_Y1_Y3 <- out$GPMA_Y1 - out$GPMA_Y3
+    out$GPMA_Y1_Y5 <- out$GPMA_Y1 - out$GPMA_Y5 
+    if (! is.na(NAvalue)){
+        out$GPMA_Y1 <- subforna(out$GPMA_Y1,NAvalue)
+        out$GPMA_Y3 <- subforna(out$GPMA_Y3,NAvalue)
+        out$GPMA_Y5 <- subforna(out$GPMA_Y5,NAvalue)
+        out$GPMA_Y1_Y3 <- subforna(out$GPMA_Y1_Y3,NAvalue)
+        out$GPMA_Y1_Y5 <- subforna(out$GPMA_Y1_Y5,NAvalue)    
+    }
     return(out)
 }
 
@@ -698,6 +727,7 @@ create_xdata_file<-function(InstallNum=1,NAvalue=NA){
     xdata <- merge(xdata,get_gr_data(strDate,NAvalue),by="COMPANY_ID")
     xdata <- merge(xdata,get_rat_data(strDate,NAvalue),by="COMPANY_ID")
     xdata <- merge(xdata,get_ee_data(strDate,NAvalue),by="COMPANY_ID")
+    xdata <- merge(xdata,get_gross_profit(strDate,NAvalue),by="COMPANY_ID")
     xdata$INSTALLDT <- strDate
     
     xdata2<-xdata[,c("COMPANY_ID","INSTALLDT")]
@@ -753,10 +783,10 @@ create_ydata_file<-function(InstallNum=1){
     return(ydata)
 }
 
-create_all_x_and_y_files<-function(){
+create_all_x_and_y_files<-function(NAvalue=NA){
     load(paste(rdata.folder,"returnsmonthly.rdata",sep=""))
     for (i in 1:length(sipbInstallDates)){
-        xdata<-create_xdata_file(i,NAvalue="median")
+        xdata<-create_xdata_file(i,NAvalue)
         ydata<-create_ydata_file(i)
     }
 }
