@@ -31,110 +31,8 @@ subforna<-function(x,subval){
 }
   
 get_si_selected_fld_list<-function(){ 
-    # This function exists to put all x fields extracted from SI DBF in one place and to make
-    # some of the other functions more readable.
-    si_selected_flds<-list()
-    si_selected_flds[["ci"]] <- c("COMPANY_ID","TICKER","COMPANY","ADR","IND_2_DIG","OPTIONABLE","SP","EXCHANGE")
-    si_selected_flds[["mlt"]] <- c(  # these are fields in first data file so fields added later won't be a problem
-        "COMPANY_ID","PE","PE_EY0","PE_EY1","PE_EY2","PE_1T","PE_A3Y","PE_A5Y",
-        "PE_A7Y","PEA_Y1","PEA_Y2","PEA_Y3","PEA_Y4","PEA_Y5","PEA_Y6","PEA_Y7",
-        "PEH_A3Y","PEH_A5Y","PEH_A7Y","PEL_A3Y","PEL_A5Y","PEL_A7Y","PBVPS","PBVPS_1T",
-        "PBVPS_A3Y","PBVPS_A5Y","PBVPS_A7Y","PBVPSA_Y1","PBVPSA_Y2","PBVPSA_Y3","PBVPSA_Y4","PBVPSA_Y5",
-        "PBVPSA_Y6","PBVPSA_Y7","PSPS","PSPS_1T","PSPS_A3Y","PSPS_A5Y","PSPS_A7Y","PSPSA_Y1",
-        "PSPSA_Y2","PSPSA_Y3","PSPSA_Y4","PSPSA_Y5","PSPSA_Y6","PSPSA_Y7","PCFPS","PCFPS_1T",
-        "PCFPS_A3Y","PCFPS_A5Y","PCFPS_A7Y","PCFPSA_Y1","PCFPSA_Y2","PCFPSA_Y3","PCFPSA_Y4","PCFPSA_Y5",
-        "PCFPSA_Y6","PCFPSA_Y7","PFCPS","PFCPS_1T","PFCPS_A3Y","PFCPS_A5Y","PFCPS_A7Y","PFCPSA_Y1",
-        "PFCPSA_Y2","PFCPSA_Y3","PFCPSA_Y4","PFCPSA_Y5","PFCPSA_Y6","PFCPSA_Y7","YIELD","YIELD_1T",
-        "YIELD_A3Y","YIELD_A5Y","YIELD_A7Y","YIELDA_Y1","YIELDA_Y2","YIELDA_Y3","YIELDA_Y4","YIELDA_Y5",
-        "YIELDA_Y6","YIELDA_Y7","PE_TO_G5F","PE_TO_G5E","PE_TO_DG5F","PE_AEPS3Y","PGFPS","IW_RV",
-        "IW_EYIELD","PE_TO_YG5E","EYIELD_12M","THUMB","PEH_Y1","PEH_Y2","PEH_Y3","PEH_Y4",
-        "PEH_Y5","PEL_Y1","PEL_Y2","PEL_Y3","PEL_Y4","PEL_Y5","PERH_A5Y","PERL_A5Y",
-        "PERA_5Y","PERV","PERVP","PERAPE","YIELDH_A7Y","PF_TO_F_GR")
-    si_selected_flds[["gr"]]<-c(
-        "COMPANY_ID","SALES_G1F","SALES_G3F","SALES_G5F","SALES_G7F","SALES_G1T","SALES_G1Q5","SALES_G2Q6",
-        "SALES_G3Q7","SALES_G4Q8","SALES_G3LS","SALES_G5LS","SALES_G7R2","GOPINC_G1F","GOPINC_G3F","GOPINC_G5F",
-        "GOPINC_G7F","GOPIN_G1T","GOPIN_G1Q5","GOPIN_G2Q6","GOPIN_G3Q7","GOPIN_G4Q8","PTI_G1F","PTI_G3F",
-        "PTI_G5F","PTI_G7F","PTI_G1T","PTI_G1Q5","PTI_G2Q6","PTI_G3Q7","PTI_G4Q8","OPINC_G1F",
-        "OPINC_G3F","OPINC_G5F","OPINC_G7F","OPIN_G1T","OPIN_G1Q5","OPIN_G2Q6","OPIN_G3Q7","OPIN_G4Q8",
-        "NETINC_G1F","NETINC_G3F","NETINC_G5F","NETINC_G7F","NETIN_G1T","NETIN_G1Q5","NETIN_G2Q6","NETIN_G3Q7",
-        "NETIN_G4Q8","EPS_G1F","EPS_G3F","EPS_G5F","EPS_G7F","EPS_G1T","EPS_G1Q5","EPS_G2Q6",
-        "EPS_G3Q7","EPS_G4Q8","EPSC_G1F","EPSC_G3F","EPSC_G5F","EPSC_G7F","EPSC_G1T","EPSC_G1Q5",
-        "EPSC_G2Q6","EPSC_G3Q7","EPSC_G4Q8","EPSC_G2Y3","EPSC_G3Y4","EPSC_G3LS","EPSC_G5LS","EPSC_G7R2",
-        "EPSD_G1F","EPSD_G3F","EPSD_G5F","EPSD_G7F","EPSD_G1T","EPSD_G1Q5","EPSD_G2Q6","EPSD_G3Q7",
-        "EPSD_G4Q8","EPSDC_G1F","EPSDC_G3F","EPSDC_G5F","EPSDC_G7F","EPSDC_G1T","EPSDC_G1Q5","EPSDC_G2Q6",
-        "EPSDC_G3Q7","EPSDC_G4Q8","EPSDC_G6Q","EPSDC_G3LS","EPSDC_G5LS","EPSDC_G7R2","CFPS_G1F","CFPS_G3F",
-        "CFPS_G5F","CFPS_G7F","CFPS_G1T","FCFPS_G1F","FCFPS_G3F","FCFPS_G5F","FCFPS_G7F","FCFPS_G1T",
-        "DPS_G1F","DPS_G3F","DPS_G5F","DPS_G7F","DPS_G1T","SUS_G7F","IW_SGB","DIV_Y7Y1",
-        "EPS_Y7Y1")
-    si_selected_flds[["rat"]] <- c(
-        "COMPANY_ID", "GPM_12M", "GPM_Y1", "GPM_Y2", "GPM_Y3", "GPM_Y4", "GPM_Y5", "GPM_Y6",
-        "GPM_Y7", "GPM_A5Y", "OPM_12M", "OPM_Y1", "OPM_Y2", "OPM_Y3", "OPM_Y4", "OPM_Y5",
-        "OPM_Y6", "OPM_Y7", "OPM_A3Y", "TIE_12M", "TIE_Y1", "TIE_Y2", "TIE_Y3", "TIE_Y4",
-        "TIE_Y5", "TIE_Y6", "TIE_Y7", "ARTURN_12M", "ARTURN_Y1", "ARTURN_Y2", "ARTURN_Y3", "ARTURN_Y4",
-        "ARTURN_Y5", "ARTURN_Y6", "ARTURN_Y7", "NPM_12M", "NPM_Y1", "NPM_Y2", "NPM_Y3", "NPM_Y4",
-        "NPM_Y5", "NPM_Y6", "NPM_Y7", "PAYOUT_12M", "PAYOUT_Y1", "PAYOUT_Y2", "PAYOUT_Y3", "PAYOUT_Y4",
-        "PAYOUT_Y5", "PAYOUT_Y6", "PAYOUT_Y7", "ROA_12M", "ROA_Y1", "ROA_Y2", "ROA_Y3", "ROA_Y4",
-        "ROA_Y5", "ROA_Y6", "ROA_Y7", "ROE_12M", "ROE_Y1", "ROE_Y2", "ROE_Y3", "ROE_Y4",
-        "ROE_Y5", "ROE_Y6", "ROE_Y7", "ROE_A5Y", "CURR_Q1", "CURR_Y1", "CURR_Y2", "CURR_Y3",
-        "CURR_Y4", "CURR_Y5", "CURR_Y6", "CURR_Y7", "QUICK_Q1", "QUICK_Y1", "QUICK_Y2", "QUICK_Y3",
-        "QUICK_Y4", "QUICK_Y5", "QUICK_Y6", "QUICK_Y7", "TL_TA_Q1", "TL_TA_Y1", "TL_TA_Y2", "TL_TA_Y3",
-        "TL_TA_Y4", "TL_TA_Y5", "TL_TA_Y6", "TL_TA_Y7", "LTD_TC_Q1", "LTD_TC_Y1", "LTD_TC_Y2", "LTD_TC_Y3" ,
-        "LTD_TC_Y4", "LTD_TC_Y5", "LTD_TC_Y6", "LTD_TC_Y7", "LTD_EQ_Q1", "LTD_EQ_Y1", "LTD_EQ_Y2", "LTD_EQ_Y3",
-        "LTD_EQ_Y4", "LTD_EQ_Y5", "LTD_EQ_Y6", "LTD_EQ_Y7", "INVTRN_12M", "INVTRN_Y1", "INVTRN_Y2", "INVTRN_Y3",
-        "INVTRN_Y4", "INVTRN_Y5", "INVTRN_Y6", "INVTRN_Y7", "TA_TRN_12M", "TA_TRN_Y1", "TA_TRN_Y2", "TA_TRN_Y3",
-        "TA_TRN_Y4", "TA_TRN_Y5", "TA_TRN_Y6", "TA_TRN_Y7", "LTD_WC_Q1", "PTM_12M", "RDM_12M", "ROE_A7Y",
-        "PAYOUT_A7Y", "OPM_A5Y", "ERBV", "FSCORE_12M", "FSCORE_Y1", "PR_BV_CHG")
-    si_selected_flds[["psd"]]<-c(  
-        "COMPANY_ID","PRICE","PRICEL_52W","PR_PRH_52W",
-        "PRCHG_04W","PRCHG_13W","PRCHG_26W","PRCHG_52W","RS_04W","RS_13W","RS_26W","RS_52W",
-        "RSW_4Q","SHR_AQ1","SHR_AQ2","SHR_AQ3","SHR_AQ4","SHR_AQ5","SHR_AQ6","SHR_AQ7",
-        "SHR_AQ8","SHR_AY1","SHR_AY2","SHR_AY3","SHR_AY4","SHR_AY5","SHR_AY6","SHR_AY7",
-        "AVM_03M","AVD_10D","SHRINST","SHRINSTN","INSTPS","INSTSS","SHRINSD",
-        "INSDPS","INSDPT","INSDSS","INSDST","FLOAT","BETA","MKTCAP","PRCHG_AM3Y",
-        "PRCHG_SD3Y","PRCHG_GM3Y","INS_PR_SHR","PRP_2YH","DD_A3M")
-    si_selected_flds[["ee"]] <- c(
-        "COMPANY_ID","EPSSD_EY0",
-        "EPSN_EY0","EPSUM_EY0","EPSDM_EY0","EPSDMP_EY0","EPSSD_EY1",
-        "EPSN_EY1","EPSUM_EY1","EPSDM_EY1","EPSDMP_EY1","EPSSD_EY2",
-        "EPSN_EY2","EPSUM_EY2","EPSDM_EY2","EPSDMP_EY2",
-        "EPSSD_EQ0","EPSN_EQ0","EPSUM_EQ0","EPSDM_EQ0","EPSDMP_EQ0",
-        "EPSSD_EQ1","EPSN_EQ1","EPSUM_EQ1","EPSDM_EQ1","EPSDMP_EQ1",
-        "EPS_EG5","EPSPM_EG5","EPSSD_EG5","EPSH_EG5","EPSL_EG5","EPSN_EG5","EPSUM_EG5","EPSDM_EG5",
-        "QS_PERC","QS_SD","QS_SUE_Q1","EPS_GH1E0",
-        "EPS_EY0EY1","EPS_EY1EY2"    
-    )
-    si_selected_flds[["perc"]] <- c(
-        "COMPANY_ID","RPE","RPE_EY0","RPE_EY1","RPE_EY2","RPE_1T","RPE_A3Y","RPE_A5Y",
-        "RPE_A7Y","RPEA_Y1","RPEA_Y2","RPEA_Y3","RPEA_Y4","RPEA_Y5","RPEH_A3Y","RPEH_A5Y",
-        "RPEH_A7Y","RPEL_A3Y","RPEL_A5Y","RPEL_A7Y","RPE_AEPS3Y","RPBVPS","RPBVPS_1T","RPBVPS_A3Y",
-        "RPBVPS_A5Y","RPBVPS_A7Y","RPSPS","RPSPS_1T","RPSPS_A3Y","RPSPS_A5Y","RPSPS_A7Y","RPCFPS",
-        "RPCFPS_1T","RPCFPS_A3Y","RPCFPS_A5Y","RPCFPS_A7Y","RPFCPS","RPFCPS_1T","RPFCPS_A3Y","RPFCPS_A5Y",
-        "RPFCPS_A7Y","RYIELD","RYIELD_1T","RYIELD_A3Y","RYIELD_A5Y","RYIELD_A7Y","RPE_TO_G5F","RPE_TO_G5E",
-        "RPE_TO_DG5","RSALES_G1F","RSALES_G3F","RSALES_G5F","RSALES_G7F","RSALES_G1T","RGOPINC_G1","RGOPINC_G3",
-        "RGOPINC_G5","RGOPINC_G7","RNETINC_G1","RNETINC_G3","RNETINC_G5","RNETINC_G7","REPS_G1F","REPS_G3F",
-        "REPS_G5F","REPS_G7F","REPS_G1T","REPSC_G1F","REPSC_G3F","REPSC_G5F","REPSC_G7F","REPSC_G1T",
-        "RCFPS_G1F","RCFPS_G3F","RCFPS_G5F","RCFPS_G7F","RCFPS_G1T","RFCFPS_G1F","RFCFPS_G3F","RFCFPS_G5F",
-        "RFCFPS_G7F","RFCFPS_G1T","RDPS_G1F","RDPS_G3F","RDPS_G5F","RDPS_G7F","RDPS_G1T","RSALES_12M",
-        "RSALES_Y1","RSALES_Y2","RSALES_Y3","RSALES_Y4","RSALES_Y5","RGPM_12M","RGPM_Y1","RGPM_Y2",
-        "RGPM_Y3","RGPM_Y4","RGPM_Y5","RNPM_12M","RNPM_Y1","RNPM_Y2","RNPM_Y3","RNPM_Y4",
-        "RNPM_Y5","RPAYOUT_12","RPAYOUT_Y1","RPAYOUT_Y2","RPAYOUT_Y3","RPAYOUT_Y4","RPAYOUT_Y5","RASSETS_Q1",
-        "RASSETS_Y1","RASSETS_Y2","RASSETS_Y3","RASSETS_Y4","RASSETS_Y5","RROA_12M","RROA_Y1","RROA_Y2",
-        "RROA_Y3","RROA_Y4","RROA_Y5","RROE_12M","RROE_Y1","RROE_Y2","RROE_Y3","RROE_Y4",
-        "RROE_Y5","RCURR_Q1","RCURR_Y1","RCURR_Y2","RCURR_Y3","RCURR_Y4","RCURR_Y5","RQUICK_Q1",
-        "RQUICK_Y1","RQUICK_Y2","RQUICK_Y3","RQUICK_Y4","RQUICK_Y5","RTL_TA_Q1","RTL_TA_Y1","RTL_TA_Y2",
-        "RTL_TA_Y3","RTL_TA_Y4","RTL_TA_Y5","RLTD_TC_Q1","RLTD_TC_Y1","RLTD_TC_Y2","RLTD_TC_Y3","RLTD_TC_Y4",
-        "RLTD_TC_Y5","RLTD_EQ_Q1","RLTD_EQ_Y1","RLTD_EQ_Y2","RLTD_EQ_Y3","RLTD_EQ_Y4","RLTD_EQ_Y5","RINVTRN_12",
-        "RINVTRN_Y1","RINVTRN_Y2","RINVTRN_Y3","RINVTRN_Y4","RINVTRN_Y5","RTA_TRN_12","RTA_TRN_Y1","RTA_TRN_Y2",
-        "RTA_TRN_Y3","RTA_TRN_Y4","RTA_TRN_Y5","RPRICE","RPRICEH_52","RPRICEL_52","RPR_PRH_52","RLTD_WC_Q1",
-        "RAVM_03M","RAVD_10D","RRS_04W","RRS_13W","RRS_26W","RRS_52W","RRSW_4Q","RBETA",
-        "RMKTCAP","RFLOAT","RSHRINSTN","RSHRINST","RSHRINSD","REPS_EG5","ROPM_12M","ROPM_Y1",
-        "ROPM_Y2","ROPM_Y3","ROPM_Y4","ROPM_Y5","RTIE_12M","RTIE_Y1","RTIE_Y2","RTIE_Y3",
-        "RTIE_Y4","RTIE_Y5","RARTURN_12","RARTURN_Y1","RARTURN_Y2","RARTURN_Y3","RARTURN_Y4","RARTURN_Y5",
-        "REPSDC_G1F","REPSDC_G3F","REPSDC_G5F","REPSDC_G7F","REPSDC_G1T")
-    si_selected_flds[["isa"]] <- c(
-        "COMPANY_ID","SALES_Y1","SALES_Y3","SALES_Y5","CGS_Y1","CGS_Y3","CGS_Y5")
-    si_selected_flds[["bsa"]] <- c(
-        "COMPANY_ID","ASSETS_Y1","ASSETS_Y3","ASSETS_Y5")
+    library(yaml)
+    si_selected_flds<-yaml.load_file("si_selected_fields.yaml")
     return(si_selected_flds)
 }
 get_ci_data<-function(strDate){ # get company information from sip data files
@@ -539,6 +437,7 @@ get_psd_data<-function(strDate,NAvalue=NA){
     out$FLOAT <-  subforna(out$FLOAT,NAvalue)
     out$BETA <-  subforna(out$BETA,NAvalue)
     out$MKTCAP <-  subforna(out$MKTCAP,NAvalue)
+    out$LOGMKTCAP <- subforna(log(out$MKTCAP),NAvalue)
     out$PRCHG_AM3Y <- subforna(out$PRCHG_AM3Y,NAvalue)
     out$PRCHG_GM3Y <- subforna(out$PRCHG_GM3Y,NAvalue)
     out$PRCHG_SD3Y <- subforna(out$PRCHG_SD3Y,NAvalue)
@@ -734,7 +633,6 @@ create_xdata_file<-function(InstallNum=1,NAvalue=NA){
     idx.dup<-duplicated(xdata2)
     xdata<-xdata[!idx.dup,]
     row.names(xdata)<-paste(xdata[,"COMPANY_ID"],xdata[,"INSTALLDT"],sep="")
-    # todo replace Inf values here instead of later.
     save(xdata,file=paste0(rdata.folder,"xdata",strDate,".rdata"))
     return(xdata)
 }
@@ -772,6 +670,13 @@ create_ydata_file<-function(InstallNum=1){
     if ((InstallNum+12)>length(sipbInstallDates)){
         ydata$Y_12M<-NA
     } else {
+        # adjust price return by dividends
+        isa<-load_fields_from_file("si_isa",rdata.folder,sipbInstallDates[InstallNum+12],c("COMPANY_ID","DPS_12M"))
+        psd<-load_fields_from_file("si_psd",rdata.folder,sipbInstallDates[InstallNum+12],c("COMPANY_ID","PRICE"))
+        temp<-merge(isa,psd,by="COMPANY_ID")
+        temp<-merge(out,ret,by="COMPANY_ID")
+        temp$Y_12M <- 100*((temp$PRICE+temp$DPS_12M) / (temp$PRICE/(1+ret$Y_12M/100))-1)
+        ret<-temp[,c("COMPANY_ID","Y_12M")]
         ydata<-merge(ydata,ret,by="COMPANY_ID",all.x = T)    
     }
     ydata$INSTALLDT <- strDate
@@ -795,5 +700,4 @@ create_all_x_and_y_files<-function(NAvalue=NA){
 #    lapply(seq_along(sipbInstallDates),create_xdata_file,NAvalue="median")
 #    lapply(seq_along(sipbInstallDates),create_ydata_file)
 #}
-
 

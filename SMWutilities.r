@@ -1,8 +1,9 @@
 # Utility function for SMW
 
 init_environment<-function(){
+    library(yaml)
     setwd("C:/Users/Rex/Documents/Quant Trading/SMW")
-    load("sipbInstallDates.rdata")
+    sipbInstallDates<-yaml.load_file("sipbInstallDates.yaml")
     assign("sipbInstallDates",sipbInstallDates,envir = .GlobalEnv)
     assign("rdata.folder","D:/SIPro/rdata/",envir = .GlobalEnv)
     assign("mainfolder","D:/SIPro",envir=.GlobalEnv)
