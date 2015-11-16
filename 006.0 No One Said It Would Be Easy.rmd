@@ -1,0 +1,43 @@
+---
+title: "No One Said It Would Be Easy (006.0)"
+author: "[Rex Macey](mailto:rex@macey.us)"
+date: "November 11, 2015"
+output: html_document
+---
+*"The only way to be comfortable with your data is to never look at it"* - unknown
+
+*Summary: We consider the characteristics of the best and worst stock portfolios each month looking for patterns.*
+
+In this post we take an important pause to look at the data and draw some sobering, but not surprising conclusions. The inspiration for this post was an attempt to take a stab at figuring out which of our nearly 700 variables might be predictive of future returns.   
+
+The analysis we perform is best explained with an example.  Picking dividend yield as an example of a variable, we take the 50 stocks with the highest return in February YYYY and calculate the market cap weighted average dividend yield using January YYYY data.  We do the same for the 50 stocks with the worst returns.  We divide the difference between these two average yields by the weighted average standard deviation of our entire universe (about 3000 stocks).  We call this a z-value and the equation looks like:  
+
+$z = (Wtd Avg Stat for Best Performing Stocks - Wtd Avg Stat for Worst Performing Stocks) / Std Dev of Universe$
+
+The reason for taking the difference between the best and worst is to make sure the variable discriminates between good and bad performing stocks.  Consider the variable standard deviation of past returns.  It may be that the best performers have a high value for this. If we only looked at good performing stocks we might conclude we should have a lot of standard deviation in our portfolio in order to have good performers.  But it might be that poor performers have high values for this variable also.  So if we load up on stocks with this characteristic we end up owning winners and losers.  We're looking for indications of what separates winners and losers so we need to consider both.  So the higher the difference in the values between winners and losers the more promising.  
+
+Because statistics have different units, we scale the differences by the universe's standard deviation.  A z value close to zero indicates that winning and losing portfolios have similar values.  
+
+```{r echo=FALSE, results='hide', fig.width=9, fig.height=10}
+setwd("C:/Users/Rex/Documents/Quant Trading/SMW")
+source("SMWUtilities.r")
+init_environment()
+source("zscores.r")
+results<-evalz()
+```
+
+We end up with 154 z-values for each of 684 variables because we have `r results$nmonths` months and `r results$nvar` numerical variables Categorical variables such as exchange are excluded.   
+
+The variable with the *highest* average z-value was `r results$maxfld` with an average of `r round(results$maxavgz,3)`. This field is the standard deviation of price returns over the last 3 years. 
+
+The variable with the *lowest* average z-value was `r results$minfld` with an average of `r round(results$minavgz,3)`.  The negative of rank of market cap indicates that having below average size stocks is helpful.
+
+From this it's apparent that the best and worst performing portfolios are not associated with consistently holding up on extreme values of a variable.
+
+However, it could be that at times some variable are important.  And it would be nice if that persisted for some time.  And the variable might be attractive (in the winning portfolio) some of the time and unattractive at others (in the losing portfolio) in which case the average z value might still be low. Teasing this out is the purpose of the heat map.  The heat map colors high values green and low values red with yellow representing zero.  Each row represents one variable and each column is a month.  There is little intensity and little persistence.  
+
+Let me pause to say that I have no expectation that this project will lead to the development of a model with promise or that even if we do that it will actually work.  Cynically, I think that a promising model would indicate a mistake somewhere along the way.  A promising model is one that seems to work well on in and out of sample tests.  Against the project are the [Efficient Markets Hypothesis](https://en.wikipedia.org/wiki/Efficient-market_hypothesis) and a [Wall] street littered with [underperforming professionals](http://us.spindices.com/documents/spiva/spiva-us-year-end-2014.pdf).  On the other hand there are the occasional and sometimes spectacular successes of some such as James Simons' [Renaissance Technologies](https://en.wikipedia.org/wiki/Renaissance_Technologies).
+
+These findings might strike some as pessimistic.  A contrary finding would have been surprising because it would have indicated the market would be easy to beat. It does suggest that it will take a combination of variables and likely a non-linear model to add value. 
+
+ 

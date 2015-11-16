@@ -1,0 +1,94 @@
+---
+title: "005.0 More Results"
+author: "[Rex Macey](mailto:rex@macey.us)"
+date: "November 5, 2015"
+output: 
+  html_document: 
+    theme: journal
+---
+# Contents
+- [Summary](#summary)
+- [Summary 1 Month holding of 50 Stocks](#summary-1-month-holding-of-50-stocks)
+- [Summary 1 Month holding of 30 Stocks](#summary-1-month-holding-of-30-stocks)
+- [Summary 1 Month holding of 10 Stocks](#summary-1-month-holding-of-10-stocks)
+- [Summary 12 Month holding of 50 Stocks](#summary-12-month-holding-of-50-stocks)
+- [Summary 12 Month holding of 30 Stocks](#summary-12-month-holding-of-30-stocks)
+- [Summary 12 Month holding of 10 Stocks](#summary-12-month-holding-of-10-stocks)
+- [Detail](#detail)
+- [Detail 1 Month holding of 50 Stocks](#detail-1-month-holding-of-50-stocks)
+- [Detail 1 Month holding of 30 Stocks](#detail-1-month-holding-of-30-stocks)
+- [Detail 1 Month holding of 10 Stocks](#detail-1-month-holding-of-10-stocks)
+- [Detail 12 Month holding of 50 Stocks](#detail-12-month-holding-of-50-stocks)
+- [Detail 12 Month holding of 30 Stocks](#detail-12-month-holding-of-30-stocks)
+- [Detail 12 Month holding of 10 Stocks](#detail-12-month-holding-of-10-stocks)
+
+Here we add to our [previous results](https://www.blogger.com/blogger.g?blogID=7792940754683030831#editor/target=post;postID=3806359980670355555;onPublishedMenu=posts;onClosedMenu=posts;postNum=1;src=postname).  The code creating these results has changed minimally, I've added a seed so that the results can be reproduced despite the random nature of the generation of the trees.  The data itself now includes October 2015.  Below are the results for portfolios of 10, 30 and 50 stocks with 1 and 12 month holding periods.  First is the summary, and then the month by month details.  As one might expect, the mean/median returns improve with fewer stocks, but the range of outcomes (risk) increases. I still find the min/max values more extremes than I'd expect.  I need to dive deeper into those results. 
+```{r, echo=FALSE}
+setwd("C:/Users/Rex/Documents/Quant Trading/SMW")
+source("SMWUtilities.r")
+init_environment()
+```
+## Summary
+
+### Summary 1 Month holding of 50 Stocks
+```{r, echo=FALSE}
+load(paste0(rdata.folder,"results1M50RET_20151105.rdata"))
+print(summary(Predict$Results))
+```
+### Summary 1 Month holding of 30 Stocks
+```{r, echo=FALSE}
+load(paste0(rdata.folder,"results1M30RET_20151105.rdata"))
+print(summary(Predict$Results))
+```
+### Summary 1 Month holding of 10 Stocks
+```{r, echo=FALSE}
+load(paste0(rdata.folder,"results1M10RET_20151105.rdata"))
+print(summary(Predict$Results))
+```
+### Summary 12 Month holding of 50 Stocks
+```{r, echo=FALSE}
+load(paste0(rdata.folder,"results12M50RET_20151105.rdata"))
+print(summary(Predict$Results))
+```
+### Summary 12 Month holding of 30 Stocks
+```{r, echo=FALSE}
+load(paste0(rdata.folder,"results12M30RET_20151105.rdata"))
+print(summary(Predict$Results))
+```
+### Summary 12 Month holding of 10 Stocks
+```{r, echo=FALSE}
+load(paste0(rdata.folder,"results12M10RET_20151105.rdata"))
+print(summary(Predict$Results))
+```
+
+## Detail
+### Detail 1 Month holding of 50 Stocks
+```{r, echo=FALSE}
+load(paste0(rdata.folder,"results1M50RET_20151105.rdata"))
+print((Predict$Results))
+```
+### Detail 1 Month holding of 30 Stocks
+```{r, echo=FALSE}
+load(paste0(rdata.folder,"results1M30RET_20151105.rdata"))
+print((Predict$Results))
+```
+### Detail 1 Month holding of 10 Stocks
+```{r, echo=FALSE}
+load(paste0(rdata.folder,"results1M10RET_20151105.rdata"))
+print((Predict$Results))
+```
+### Detail 12 Month holding of 50 Stocks
+```{r, echo=FALSE}
+load(paste0(rdata.folder,"results12M50RET_20151105.rdata"))
+print((Predict$Results))
+```
+### Detail 12 Month holding of 30 Stocks
+```{r, echo=FALSE}
+load(paste0(rdata.folder,"results12M30RET_20151105.rdata"))
+print((Predict$Results))
+```
+### Detail 12 Month holding of 10 Stocks
+```{r, echo=FALSE}
+load(paste0(rdata.folder,"results12M10RET_20151105.rdata"))
+print((Predict$Results))
+```

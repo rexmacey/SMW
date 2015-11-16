@@ -1,0 +1,49 @@
+---
+title: "No One Said It Would Be Easy (Revised) (006.1)"
+author: "[Rex Macey](mailto:rex@macey.us)"
+date: "November 11, 2015"
+output: html_document
+---
+*This post revises the previous post.  Here I use a bootstrapped estimate of the standard error to replace the standard deviation.  I also inspect for serial correlation.*
+
+*Summary: We consider the characteristics of the best and worst stock portfolios each month looking for patterns. Winning (losing) portfolios do have tilts but do not have consistently extreme exposures to specific variables. It appears that if a characteristic is in favor it may provide information about what will do well in the following month.*
+
+The inspiration for this post was an attempt to take a stab at figuring out which of our nearly 700 variables might be predictive of future stock returns. The questions addressed here can be posed as:
+
+* Do high (low) returning stock portfolios in a month have unusual characteristics at the end of the previous month?
+* Do the characteristics of high (low) returning stocks in one month tell us anything about those characteristics in the next month?  (do characteristics persist)?
+
+The analysis we perform is best explained with an example.  Picking dividend yield as an example of a variable, we take the 50 stocks with the highest return in February 2YYY and calculate the market cap weighted average dividend yield using January 2YYY data.  We do the same for the 50 stocks with the worst returns.  We divide the difference between these two average yields by the weighted average standard *error* of our entire universe (about 3000 stocks).  We call this a z-value and the equation looks like:  
+
+$z = [(Wtd Avg Stat for Best Performing Stocks - Wtd Avg Stat for Worst Performing Stocks) / Std Error of Universe$] / 2
+
+The reason for taking the difference between the best and worst is to make sure the variable discriminates between good and bad performing stocks.  Consider a variable that measures volatility.  It may be that the best performers have a high value for this. If we only looked at good performing stocks we might conclude we should have a lot of standard deviation in our portfolio in order to have good performers.  But it might be that poor performers also have high values for this variable.  So if we load up on stocks with this characteristic we end up owning winners and losers.  We're looking for indications of what separates winners and losers so we need to consider the difference between winners and losers.  
+
+Because statistics have different units, we scale the differences by the universe's standard error.  A z-value close to zero indicates that winning and losing portfolios have similar values.  
+
+This paragraph explains my use of a bootstrapped standard error instead of standard deviation and may be skipped if you are not interested.  Standard deviation gives of a measure of the dispersion of values in a population or sample.  Here we are taking market-cap weighted averages of samples of 50 companies.  We are interested in the dispersion of the weighted averages.  The dispersion of sample means of size 50 is going to be less than the dispersion of the underlying individual observations.  Usually, one divides the standard deviation by the square root of the sample size to find standard error.  In this case, I'm using weighted averages and wasn't sure what my N should be.  So I bootstrapped the standard error.  Each month I randomly selected 50 companies and calculated the market-cap weighted average for each of the 683 variables.  This was repeated 3000 times.  The standard error I use for a variable in a month is the standard deviation of the 3000 values calculated for that variable in that month.  
+
+```{r echo=FALSE, results='hide', fig.width=9, fig.height=10}
+setwd("C:/Users/Rex/Documents/Quant Trading/SMW")
+source("SMWUtilities.r")
+init_environment()
+source("zscores.r")
+results<-evalz()
+```
+
+We end up with `r results$nmonths` z-values for each of `r results$nvar` variables because we have `r results$nmonths` months and `r results$nvar` numerical variables. Categorical variables such as exchange are excluded.   
+
+The variable with the *highest* median z-value was `r results$maxfld` with a median of `r round(results$maxavgz,3)`. This field is the Inve$tWare Sales Growth Benchmark. 
+
+The variable with the *lowest* median z-value was `r results$minfld` with a median of `r round(results$minavgz,3)`.  The negative of rank of market cap indicates that having below average size stocks is helpful.
+
+From this it's apparent that the best and worst performing portfolios are not associated with consistently holding extreme values of a variable.  But it may be that some variables are usually different from average. Then again with over 650 variable, one should not be surprised if a few deviate from average.  
+
+It may be that high (low) performing portfolios do not consistently weight to a variable.  But we might be in periods where a characteristic is in or out of favor.  This could provide valuable insight if there is persistence.  To search for persistence, we ran one regression for each variable.  Each variable's z-score was regressed on its previous period's z-score.  In stat-speak, this is a first order autocorrelation.  We found that `r paste0(results$nsignvar[1],", ",results$nsignvar[2],", and ",results$nsignvar[3])` variables had p-values (levels of significance) less than 1%, 5% and 10% respectively.  These are far higher than the `r paste0(results$nvar*.01,", ",results$nvar*.05,", and ",results$nvar*.1)` that we might expect by chance.  Some of our variables are correlated (e.g., P/B and P/E) which confounds this because we don't have as many individual variables as we might think.  And if variable 1 and variable 10 are correlated it follows that if one is autocorrelated, then the other will be also. 
+
+This finding does suggest that if a characteristic is in favor it may provide information about what will do well in the following month. This may also suggest that many variables are involved in finding winning and losing stocks.  
+
+## Code Reference
+zscores.r
+
+ 
