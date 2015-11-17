@@ -1,0 +1,25 @@
+---
+title: "Zero and Near Zero Variance (008.0)"
+author: "[Rex Macey](rex@macey.us)"
+date: "November 17, 2015"
+output: html_document
+---
+
+Predictors that have zero or [near zero variance](http://topepo.github.io/caret/preprocess.html) (nzv) can cause models to crash or the fit to be unstable. In this study we identify numeric variables with nzv.  In our case, this presents an issue.  We have a model each month.  Conceivably, a variable might have nzv in one month but not another.  One solution is to remove a variable from all months.  If we only remove nzv from specific months we must take care to track which set of variables are used each month.  To predict Y with a model, the model must be called with the same set of variables that created it.
+
+The following list shows the percentage of months in which a variable is considered to have nzv. One of the interesting ones is Yield.  This is likely because so many companies pay no dividend (near 50% of our 3000 stock universe).  
+
+```{r echo=FALSE, warning=FALSE, message=FALSE, comment=""}
+setwd("C:/Users/Rex/Documents/Quant Trading/SMW")
+source("SMWUtilities.r")
+init_environment()
+library(caret)
+nzv_list<-readRDS("nzv_list.rds")
+nzv_freq<-list()
+nzv_freq<-sapply(seq(1,154), function(x) c(nzv_freq,rownames(nzv_list[[x]]))  )
+nzv_freq<-unlist(nzv_freq)
+nzv_tbl<-table(nzv_freq)
+nzv_tbl<-nzv_tbl[order(nzv_tbl,decreasing = TRUE)]
+round(100*(nzv_tbl/154),1)
+```
+At this stage, I plan to exclude variables with nzv month by month.  This means the variables in a model can be dynamic.  While this adds to the complexity of the programming, it allows the flexibility of adding variables in the future.

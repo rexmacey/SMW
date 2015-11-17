@@ -1,0 +1,68 @@
+---
+title: "Industry Classification (007.0)"
+author: "[Rex Macey](mailto:rex@macey.us)"
+date: "November 16, 2015"
+output: html_document
+---
+In this post, we look at the results of our random forest model with and without one variable, the 2 digit industry classification code.  I have been worried that the random forest might do a good job explaining the past, but fail to predict the future.  Specifically, in any month industry may explain performance, but this may not persist.  So I compare forecasts with and without the industry variable. Note this post also updates the performance from previous posts (5.0).  The 12 month return now includes dividends (the one month does not).
+
+Two random forests, one with and one without the industry variable, are created for each month.  Each forecast uses the 12 most recent forests *whose response variable (1 or 12 month forward return) does not overlap with the forecast period.* Portfolios are constructed using the top (Long) and bottom (short) 50 companies weighted by market cap. In the following tables CWLong, CWMkt, and CWShort are the long, universe, and short portfolios each of which is capitalization weighted.  
+
+The mean of the 1 month returns for the Long portfolio improve with the addition of the Industry variable.  However, the Short portfolio's performance deteriorates.   When the horizon shifts to 12 months, the story reverses.  The mean return for the Long portfolio goes down which is bad, and the mean goes down for the Short side which is good.  The same observations hold if we examine the medians.  Following the section looking at capitalization weighted portfolios are panels with equal weighted portfolios.  These two give no indication that Industry helps or not. 
+
+```{r echo=FALSE}
+setwd("C:/Users/Rex/Documents/Quant Trading/SMW")
+source("SMWUtilities.r")
+init_environment()
+load(paste0(rdata.folder,"Results1M50RET_20151116.rdata"))
+results1mIncl<-Predict$Results[,c("CWLong","CWMkt","CWShort")]
+results1mInclEq<-Predict$Results[,c("EWLong","EWMkt","EWShort")]
+
+load(paste0(rdata.folder,"IgnoreIndustry/Results1M50RET_20151115.rdata"))
+results1mExcl<-Predict$Results[,c("CWLong","CWMkt","CWShort")]
+results1mExclEq<-Predict$Results[,c("EWLong","EWMkt","EWShort")]
+
+load(paste0(rdata.folder,"Results12M50RET_20151116.rdata"))
+results12mIncl<-Predict$Results[,c("CWLong","CWMkt","CWShort")]
+results12mInclEq<-Predict$Results[,c("EWLong","EWMkt","EWShort")]
+
+load(paste0(rdata.folder,"IgnoreIndustry/Results12M50RET_20151115.rdata"))
+results12mExcl<-Predict$Results[,c("CWLong","CWMkt","CWShort")]
+results12mExclEq<-Predict$Results[,c("EWLong","EWMkt","EWShort")]
+```
+## 1 Month Forward Cap-Weighted Without Industry Variable
+```{r echo=FALSE} 
+summary(results1mExcl)
+```
+## 1 Month Forward Cap-Weighted With Industry Variable
+```{r echo=FALSE}
+summary(results1mIncl)
+```
+## 12 Month Forward Cap-Weighted Without Industry Variable
+```{r echo=FALSE}
+summary(results12mExcl)
+```
+## 12 Month Forward Cap-Weighted With Industry Variable
+```{r echo=FALSE}
+summary(results12mIncl)
+```
+
+---------------
+
+## 1 Month Forward Equal-Weighted Without Industry Variable
+```{r echo=FALSE} 
+summary(results1mExclEq)
+```
+
+## 1 Month Forward Equal-Weighted With Industry Variable
+```{r echo=FALSE}
+summary(results1mInclEq)
+```
+## 12 Month Forward Equal-Weighted Without Industry Variable
+```{r echo=FALSE}
+summary(results12mExclEq)
+```
+## 12 Month Forward Equal-Weighted With Industry Variable
+```{r echo=FALSE}
+summary(results12mInclEq)
+```
