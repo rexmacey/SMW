@@ -699,7 +699,7 @@ create_ydata_file<-function(InstallNum=1){
     if ((InstallNum+24)>length(sipbInstallDates)){
         ydata$Y_24M<-NA
     } else {
-        ret<-yret(InstallNum,24,"Y_6M")
+        ret<-yret(InstallNum,24,"Y_24M")
         ydata<-merge(ydata,ret,by="COMPANY_ID",all.x = T)    
     }
     if ((InstallNum+36)>length(sipbInstallDates)){
