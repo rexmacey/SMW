@@ -24,6 +24,9 @@ data<-data[!idx] #remove blank lines
 
 fldnum<-1
 i<-0
+pdf$content[1]
+fldnum<-1
+i<-1
 
 colontrim<-function(s){
     p<-regexpr(":",s)
