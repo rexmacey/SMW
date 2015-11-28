@@ -1,61 +1,53 @@
-setwd("C:/Users/Rex/Documents/Quant Trading/SMW")
-source("smwutilities.r")
-init_environment()
+library(tm)
 
-uri <- "C:/Users/Rex/Documents/Quant Trading/SMW/proflddefs.pdf"
-if(all(file.exists(Sys.which(c("pdfinfo", "pdftotext"))))) {
-    pdf <- readPDF(control = list(text = "-layout"))(elem = list(uri = uri),
-                                                     language = "en",
-                                                     id = "id1")
-    content(pdf)[1:13]
-} else {
-    print("files do not exist")
+uri <- "proflddefs.pdf"
+pdfReader <- tm::readPDF(control = list(text = "-layout"))
+pdfParsed <- pdfReader(elem = list(uri = uri),
+                       language = "en",
+                       id = "id1")
+
+data <- pdfParsed$content
+data <- gsub("\xad", "-", data) # fix some weird dashes
+data <- gsub("\xae", "-", data) # remove copyright character
+data <- data[!grepl("Stock Investor Pro Field Definitions", data)] # remove page header
+data <- data[data != ""] # remove blank lines
+
+# identify the blocks of data defining each field and split into a list
+table_idx <- grep("Data Table Name:", data)
+name_idx  <- table_idx - 1L
+stopifnot(1L %in% name_idx)
+is_new_field <- seq_along(data) %in% name_idx
+field_idx <- cumsum(is_new_field)
+field_list <- split(data, field_idx)
+
+# a function to check our assumptions for the data of each field
+is_valid_field <- function(dat) {
+   grepl("Data Table Name:",            dat[2]) &
+   grepl("Data Category:",              dat[3]) &
+   grepl("Field Type:",                 dat[4]) &
+   grepl("Percent Rank:",               dat[5]) &
+   grepl("(Industry|Company)/Sector Median[s]?:", dat[6])
+}
+bad_data <- Filter(Negate(is_valid_field), field_list)
+if (length(bad_data) > 0L) {print(bad_data); stop("BAD DATA!!! See above")}
+good_data <- Filter(is_valid_field, field_list)
+
+# a function to process the data of a field into a one row data.frame
+parse_field <- function(dat) {
+   colontrim <- function(s) sub(".*: ", "", s)
+   data.frame(name        = colontrim(dat[1]),
+              table       = colontrim(dat[2]),
+              category    = colontrim(dat[3]),
+              type        = colontrim(dat[4]),
+              percentrank = colontrim(dat[5]),
+              ismedian    = colontrim(dat[6]),
+              desc        = paste(tail(dat, -6), collapse = " "),
+              stringsAsFactors = FALSE)
 }
 
-flddefs<-data.frame(name=character(),table=character(),category=character(),type=character(),
-                    percentrank=character(),ismedian=character(),desc=character(),stringsAsFactors = FALSE)
+flddefs_list <- lapply(good_data, parse_field)
+flddefs <- do.call(rbind, flddefs_list)
 
-#ignore first line which is title
-data<-pdf$content
-idx<-regexpr("Stock Investor Pro Field Definitions",data)
-data<-data[idx<=0] #remove page headers
-idx<-data==""
-data<-data[!idx] #remove blank lines
-
-fldnum<-1
-i<-0
-pdf$content[1]
-fldnum<-1
-i<-1
-
-colontrim<-function(s){
-    p<-regexpr(":",s)
-    s<-substr(s,p+2,nchar(s))
-    return(s)
-}
-while (TRUE){
-    i<-i+1
-    if (i>length(data)) break
-    if (substr(data[i],1,10) == "Data Table") {
-        flddefs[fldnum,"name"]<-colontrim(data[i-1])
-        flddefs[fldnum,"table"]<-colontrim(data[i])
-        flddefs[fldnum,"category"]<-colontrim(data[i+1])
-        flddefs[fldnum,"type"]<-colontrim(data[i+2])
-        flddefs[fldnum,"percentrank"]<-colontrim(data[i+3])
-        flddefs[fldnum,"ismedian"]<-colontrim(data[i+4])
-        flddefs[fldnum,"desc"]<-""
-        i<-i+5
-        while (TRUE){
-            flddefs[fldnum,"desc"]<-paste(flddefs[fldnum,"desc"],data[i])
-            i<-i+1
-            if (i > length(data)) break
-            if (i+1 > length(data)) break
-            if (substr(data[i+1],1,10)=="Data Table") break
-        }
-        fldnum<-fldnum+1
-    }
-}
-
-saveRDS(flddefs,file="SIP_field_defs.rds")
-write.csv(flddefs,file="SIP_field_defs.csv")
+saveRDS(flddefs, file = "SIP_field_defs.rds")
+write.csv(flddefs, file = "SIP_field_defs.csv")
 
