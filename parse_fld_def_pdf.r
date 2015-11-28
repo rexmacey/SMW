@@ -17,7 +17,7 @@ data <- data[data != ""] # remove blank lines
 data <- sub("Data Table Name ", "Data Table Name:", data) # fixes one bad record
 
 # identify the blocks of data defining each field and split into a list
-table_idx <- grep("Data Table Name[:]?", data)
+table_idx <- grep("Data Table Name:", data)
 name_idx  <- table_idx - 1L
 stopifnot(1L %in% name_idx)
 is_new_field <- seq_along(data) %in% name_idx
