@@ -57,7 +57,7 @@ get_ci_data<-function(strDate){ # get company information from sip data files
 
 get_var_definitions <- function() {
     def_df <- read.csv(file = "var_definitions.csv", stringsAsFactors = FALSE)
-    def_list <- strsplit(def_df, def_df$GROUP)
+    def_list <- split(def_df, def_df$GROUP)
     return(def_list)
 }
 
@@ -65,7 +65,7 @@ get_group_data <- function(strDate, group) {
     fields <- get_si_selected_fld_list()[[group]]
     fn <- sprintf("si_%s", group)
     data <- load_fields_from_file(fn = fn, rdata.folder = rdata.folder, strDate = strDate, fldlist = fields)
-    def_df <- get_group_var_definitions()[[group]]
+    def_df <- get_var_definitions()[[group]]
     out <- list()
     for (i in seq_len(nrow(def_df))) {
         def <- def_df[i, ]
