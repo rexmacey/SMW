@@ -54,145 +54,30 @@ get_ci_data<-function(strDate){ # get company information from sip data files
     out$OPTIONABLE<-factor(out$OPTIONABLE)
     return(out)  # in x exclude TICKER, COMPANY
 }
-get_mlt_data<-function(strDate,NAvalue=NA){ # get multiples data from sip data files
-    si_mlt_flds <- get_si_selected_fld_list()[["mlt"]] # these are fields in first data file so fields added later won't be a problem
-    si_mlt<-load_fields_from_file("si_mlt",rdata.folder,strDate,si_mlt_flds)
-    # calculate new features
-    si_mlt$PEv1T <- subforna(si_mlt$PE / si_mlt$PE_1T,NAvalue)
-    si_mlt$PEvA3Y <- subforna(si_mlt$PE / si_mlt$PE_A3Y,NAvalue)
-    si_mlt$PEvA5Y <- subforna(si_mlt$PE / si_mlt$PE_A5Y,NAvalue)
-    si_mlt$PEvA7Y <- subforna(si_mlt$PE / si_mlt$PE_A7Y,NAvalue)
-    si_mlt$PEvA_Y1 <- subforna(si_mlt$PE / si_mlt$PEA_Y1,NAvalue)
-    si_mlt$PEvA_Y2 <- subforna(si_mlt$PE / si_mlt$PEA_Y2,NAvalue)
-    si_mlt$PEvA_Y3 <- subforna(si_mlt$PE / si_mlt$PEA_Y3,NAvalue)
-    si_mlt$PEvA_Y4 <- subforna(si_mlt$PE / si_mlt$PEA_Y4,NAvalue)
-    si_mlt$PEvA_Y5 <- subforna(si_mlt$PE / si_mlt$PEA_Y5,NAvalue)
-    si_mlt$PEvA_Y6 <- subforna(si_mlt$PE / si_mlt$PEA_Y6,NAvalue)
-    si_mlt$PEvA_Y7 <- subforna(si_mlt$PE / si_mlt$PEA_Y7,NAvalue)
-    si_mlt$PEvH_A3Y <- subforna(si_mlt$PE / si_mlt$PEH_A3Y,NAvalue)
-    si_mlt$PEvH_A5Y <- subforna(si_mlt$PE / si_mlt$PEH_A5Y,NAvalue)
-    si_mlt$PEvH_A7Y <- subforna(si_mlt$PE / si_mlt$PEH_A7Y,NAvalue)
-    si_mlt$PEvL_A3Y <- subforna(si_mlt$PE / si_mlt$PEL_A3Y,NAvalue)
-    si_mlt$PEvL_A5Y <- subforna(si_mlt$PE / si_mlt$PEL_A5Y,NAvalue)
-    si_mlt$PEvL_A7Y <- subforna(si_mlt$PE / si_mlt$PEL_A7Y,NAvalue)
-    si_mlt$PE <-subforna(si_mlt$PE,NAvalue)
-    
-    si_mlt$PBVPSv1T <- subforna(si_mlt$PBVPS / si_mlt$PBVPS_1T,NAvalue)
-    si_mlt$PBVPSvA3Y <- subforna(si_mlt$PBVPS / si_mlt$PBVPS_A3Y,NAvalue)
-    si_mlt$PBVPSvA5Y <- subforna(si_mlt$PBVPS / si_mlt$PBVPS_A5Y,NAvalue)
-    si_mlt$PBVPSvA7Y <- subforna(si_mlt$PBVPS / si_mlt$PBVPS_A7Y,NAvalue)
-    si_mlt$PBVPSvA_Y1 <- subforna(si_mlt$PBVPS / si_mlt$PBVPSA_Y1,NAvalue)
-    si_mlt$PBVPSvA_Y2 <- subforna(si_mlt$PBVPS / si_mlt$PBVPSA_Y2,NAvalue)
-    si_mlt$PBVPSvA_Y3 <- subforna(si_mlt$PBVPS / si_mlt$PBVPSA_Y3,NAvalue)
-    si_mlt$PBVPSvA_Y4 <- subforna(si_mlt$PBVPS / si_mlt$PBVPSA_Y4,NAvalue)
-    si_mlt$PBVPSvA_Y5 <- subforna(si_mlt$PBVPS / si_mlt$PBVPSA_Y5,NAvalue)
-    si_mlt$PBVPSvA_Y6 <- subforna(si_mlt$PBVPS / si_mlt$PBVPSA_Y6,NAvalue)
-    si_mlt$PBVPSvA_Y7 <- subforna(si_mlt$PBVPS / si_mlt$PBVPSA_Y7,NAvalue)
-    si_mlt$PBVPS<-subforna(si_mlt$PBVPS,NAvalue)
-    
-    si_mlt$PSPSv1T <- subforna(si_mlt$PSPS / si_mlt$PSPS_1T,NAvalue)
-    si_mlt$PSPSvA3Y <- subforna(si_mlt$PSPS / si_mlt$PSPS_A3Y,NAvalue)
-    si_mlt$PSPSvA5Y <- subforna(si_mlt$PSPS / si_mlt$PSPS_A5Y,NAvalue)
-    si_mlt$PSPSvA7Y <- subforna(si_mlt$PSPS / si_mlt$PSPS_A7Y,NAvalue)
-    si_mlt$PSPSvA_Y1 <- subforna(si_mlt$PSPS / si_mlt$PSPSA_Y1,NAvalue)
-    si_mlt$PSPSvA_Y2 <- subforna(si_mlt$PSPS / si_mlt$PSPSA_Y2,NAvalue)
-    si_mlt$PSPSvA_Y3 <- subforna(si_mlt$PSPS / si_mlt$PSPSA_Y3,NAvalue)
-    si_mlt$PSPSvA_Y4 <- subforna(si_mlt$PSPS / si_mlt$PSPSA_Y4,NAvalue)
-    si_mlt$PSPSvA_Y5 <- subforna(si_mlt$PSPS / si_mlt$PSPSA_Y5,NAvalue)
-    si_mlt$PSPSvA_Y6 <- subforna(si_mlt$PSPS / si_mlt$PSPSA_Y6,NAvalue)
-    si_mlt$PSPSvA_Y7 <- subforna(si_mlt$PSPS / si_mlt$PSPSA_Y7,NAvalue)
-    si_mlt$PSPS<-subforna(si_mlt$PSPS,NAvalue)
-    
-    si_mlt$PCFPSv1T <- subforna(si_mlt$PCFPS / si_mlt$PCFPS_1T,NAvalue)
-    si_mlt$PCFPSvA3Y <- subforna(si_mlt$PCFPS / si_mlt$PCFPS_A3Y,NAvalue)
-    si_mlt$PCFPSvA5Y <- subforna(si_mlt$PCFPS / si_mlt$PCFPS_A5Y,NAvalue)
-    si_mlt$PCFPSvA7Y <- subforna(si_mlt$PCFPS / si_mlt$PCFPS_A7Y,NAvalue)
-    si_mlt$PCFPSvA_Y1 <- subforna(si_mlt$PCFPS / si_mlt$PCFPSA_Y1,NAvalue)
-    si_mlt$PCFPSvA_Y2 <- subforna(si_mlt$PCFPS / si_mlt$PCFPSA_Y2,NAvalue)
-    si_mlt$PCFPSvA_Y3 <- subforna(si_mlt$PCFPS / si_mlt$PCFPSA_Y3,NAvalue)
-    si_mlt$PCFPSvA_Y4 <- subforna(si_mlt$PCFPS / si_mlt$PCFPSA_Y4,NAvalue)
-    si_mlt$PCFPSvA_Y5 <- subforna(si_mlt$PCFPS / si_mlt$PCFPSA_Y5,NAvalue)
-    si_mlt$PCFPSvA_Y6 <- subforna(si_mlt$PCFPS / si_mlt$PCFPSA_Y6,NAvalue)
-    si_mlt$PCFPSvA_Y7 <- subforna(si_mlt$PCFPS / si_mlt$PCFPSA_Y7,NAvalue)
-    si_mlt$PCFPS<-subforna(si_mlt$PCFPS,NAvalue)
-    
-    si_mlt$PFCPSv1T <- subforna(si_mlt$PFCPS / si_mlt$PFCPS_1T,NAvalue)
-    si_mlt$PFCPSvA3Y <- subforna(si_mlt$PFCPS / si_mlt$PFCPS_A3Y,NAvalue)
-    si_mlt$PFCPSvA5Y <- subforna(si_mlt$PFCPS / si_mlt$PFCPS_A5Y,NAvalue)
-    si_mlt$PFCPSvA7Y <- subforna(si_mlt$PFCPS / si_mlt$PFCPS_A7Y,NAvalue)
-    si_mlt$PFCPSvA_Y1 <- subforna(si_mlt$PFCPS / si_mlt$PFCPSA_Y1,NAvalue)
-    si_mlt$PFCPSvA_Y2 <- subforna(si_mlt$PFCPS / si_mlt$PFCPSA_Y2,NAvalue)
-    si_mlt$PFCPSvA_Y3 <- subforna(si_mlt$PFCPS / si_mlt$PFCPSA_Y3,NAvalue)
-    si_mlt$PFCPSvA_Y4 <- subforna(si_mlt$PFCPS / si_mlt$PFCPSA_Y4,NAvalue)
-    si_mlt$PFCPSvA_Y5 <- subforna(si_mlt$PFCPS / si_mlt$PFCPSA_Y5,NAvalue)
-    si_mlt$PFCPSvA_Y6 <- subforna(si_mlt$PFCPS / si_mlt$PFCPSA_Y6,NAvalue)
-    si_mlt$PFCPSvA_Y7 <- subforna(si_mlt$PFCPS / si_mlt$PFCPSA_Y7,NAvalue)
-    si_mlt$PFCPS<-subforna(si_mlt$PFCPS,NAvalue)
-    
-    si_mlt$YIELDv1T <- subforna(si_mlt$YIELD / si_mlt$YIELD_1T,NAvalue)
-    si_mlt$YIELDvA3Y <- subforna(si_mlt$YIELD / si_mlt$YIELD_A3Y,NAvalue)
-    si_mlt$YIELDvA5Y <- subforna(si_mlt$YIELD / si_mlt$YIELD_A5Y,NAvalue)
-    si_mlt$YIELDvA7Y <- subforna(si_mlt$YIELD / si_mlt$YIELD_A7Y,NAvalue)
-    si_mlt$YIELDvA_Y1 <- subforna(si_mlt$YIELD / si_mlt$YIELDA_Y1,NAvalue)
-    si_mlt$YIELDvA_Y2 <- subforna(si_mlt$YIELD / si_mlt$YIELDA_Y2,NAvalue)
-    si_mlt$YIELDvA_Y3 <- subforna(si_mlt$YIELD / si_mlt$YIELDA_Y3,NAvalue)
-    si_mlt$YIELDvA_Y4 <- subforna(si_mlt$YIELD / si_mlt$YIELDA_Y4,NAvalue)
-    si_mlt$YIELDvA_Y5 <- subforna(si_mlt$YIELD / si_mlt$YIELDA_Y5,NAvalue)
-    si_mlt$YIELDvA_Y6 <- subforna(si_mlt$YIELD / si_mlt$YIELDA_Y6,NAvalue)
-    si_mlt$YIELDvA_Y7 <- subforna(si_mlt$YIELD / si_mlt$YIELDA_Y7,NAvalue)
-    si_mlt$YIELD<-subforna(si_mlt$YIELD,NAvalue)
-    
-    si_mlt$PE_TO_G5F<-subforna(si_mlt$PE_TO_G5F,NAvalue)
-    si_mlt$PE_TO_G5E<-subforna(si_mlt$PE_TO_G5E,NAvalue)
-    si_mlt$PE_TO_DG5F<-subforna(si_mlt$PE_TO_DG5F,NAvalue)
-    si_mlt$PE_AEPS3Y<-subforna(si_mlt$PE_AEPS3Y,NAvalue)
-    si_mlt$PGFPS<-subforna(si_mlt$PGFPS,NAvalue)
-    si_mlt$IW_RV<-subforna(si_mlt$IW_RV,NAvalue)
-    si_mlt$IW_EYIELD<-subforna(si_mlt$IW_EYIELD,NAvalue)
-    si_mlt$PE_TO_YG5E<-subforna(si_mlt$PE_TO_YG5E,NAvalue)
-    si_mlt$EYIELD_12M<-subforna(si_mlt$EYIELD_12M,NAvalue)
-    si_mlt$THUMB<-subforna(si_mlt$THUMB,NAvalue)
-    si_mlt$PEH_Y1<-subforna(si_mlt$PEH_Y1,NAvalue)
-    si_mlt$PEH_Y2<-subforna(si_mlt$PEH_Y2,NAvalue)
-    si_mlt$PEH_Y3<-subforna(si_mlt$PEH_Y3,NAvalue)
-    si_mlt$PEH_Y4<-subforna(si_mlt$PEH_Y4,NAvalue)
-    si_mlt$PEH_Y5<-subforna(si_mlt$PEH_Y5,NAvalue)
-    si_mlt$PEL_Y1<-subforna(si_mlt$PEL_Y1,NAvalue)
-    si_mlt$PEL_Y2<-subforna(si_mlt$PEL_Y2,NAvalue)
-    si_mlt$PEL_Y3<-subforna(si_mlt$PEL_Y3,NAvalue)
-    si_mlt$PEL_Y4<-subforna(si_mlt$PEL_Y4,NAvalue)
-    si_mlt$PEL_Y5<-subforna(si_mlt$PEL_Y5,NAvalue)
-    si_mlt$PERH_A5Y<-subforna(si_mlt$PERH_A5Y,NAvalue)
-    si_mlt$PERL_A5Y<-subforna(si_mlt$PERL_A5Y,NAvalue)
-    si_mlt$PERA_5Y<-subforna(si_mlt$PERA_5Y,NAvalue)
-    si_mlt$PERV<-subforna(si_mlt$PERV,NAvalue)
-    si_mlt$PERVP<-subforna(si_mlt$PERVP,NAvalue)
-    si_mlt$PERAPE<-subforna(si_mlt$PERAPE,NAvalue)
-    si_mlt$YIELDH_A7Y<-subforna(si_mlt$YIELDH_A7Y,NAvalue)
-    si_mlt$PF_TO_F_GR<-subforna(si_mlt$PF_TO_F_GR,NAvalue)
-    
-    si_mlt$PE_EY0<-subforna(si_mlt$PE_EY0,NAvalue)
-    si_mlt$PE_EY1<-subforna(si_mlt$PE_EY1,NAvalue)
-    si_mlt$PE_EY2<-subforna(si_mlt$PE_EY2,NAvalue)
-    
-    # remove unwanted fields that were used to calculate new features
-    for (x in c("PE_1T","PE_A3Y","PE_A5Y","PE_A7Y","PEA_Y1","PEA_Y2","PEA_Y3","PEA_Y4",
-                "PEA_Y5","PEA_Y6","PEA_Y7","PEH_A3Y","PEH_A5Y","PEH_A7Y",
-                "PEL_A3Y","PEL_A5Y","PEL_A7Y",
-                "PBVPS_1T","PBVPS_A3Y","PBVPS_A5Y","PBVPS_A7Y","PBVPSA_Y1","PBVPSA_Y2","PBVPSA_Y3","PBVPSA_Y4",
-                "PBVPSA_Y5","PBVPSA_Y6","PBVPSA_Y7",
-                "PSPS_1T","PSPS_A3Y","PSPS_A5Y","PSPS_A7Y","PSPSA_Y1","PSPSA_Y2","PSPSA_Y3","PSPSA_Y4",
-                "PSPSA_Y5","PSPSA_Y6","PSPSA_Y7",
-                "PCFPS_1T","PCFPS_A3Y","PCFPS_A5Y","PCFPS_A7Y","PCFPSA_Y1","PCFPSA_Y2","PCFPSA_Y3","PCFPSA_Y4",
-                "PCFPSA_Y5","PCFPSA_Y6","PCFPSA_Y7",
-                "PFCPS_1T","PFCPS_A3Y","PFCPS_A5Y","PFCPS_A7Y","PFCPSA_Y1","PFCPSA_Y2","PFCPSA_Y3","PFCPSA_Y4",
-                "PFCPSA_Y5","PFCPSA_Y6","PFCPSA_Y7",
-                "YIELD_1T","YIELD_A3Y","YIELD_A5Y","YIELD_A7Y","YIELDA_Y1","YIELDA_Y2","YIELDA_Y3","YIELDA_Y4",
-                "YIELDA_Y5","YIELDA_Y6","YIELDA_Y7")){
-        si_mlt[,x]<-NULL
-    }
-    return(si_mlt)
+
+get_var_definitions <- function() {
+    def_df <- read.csv(file = "var_definitions.csv", stringsAsFactors = FALSE)
+    def_list <- split(def_df, def_df$GROUP)
+    return(def_list)
 }
+
+get_group_data <- function(strDate, group) {
+    fields <- get_si_selected_fld_list()[[group]]
+    fn <- sprintf("si_%s", group)
+    data <- load_fields_from_file(fn = fn, rdata.folder = rdata.folder, strDate = strDate, fldlist = fields)
+    def_df <- get_var_definitions()[[group]]
+    out <- list()
+    for (i in seq_len(nrow(def_df))) {
+        def <- def_df[i, ]
+        out[[def$VARNAME]] <- eval(parse(text = def$FORMULA), envir = data)
+        if (def$SUBFORNA) out[[def$VARNAME]] <- subforna(x = out[[def$VARNAME]], subval = def$SUBVAL)
+    }
+    out <- as.data.frame(out, stringsAsFactors = FALSE)
+}
+
+get_mlt_data <- function(strDate, NAvalue=NA) get_group_data(strDate, group = "mlt")   # NAvalue is ignored but kept so the code won't break
+get_rat_data <- function(strDate, NAvalue=NA) get_group_data(strDate, group = "rat")   # NAvalue is ignored but kept so the code won't break
+
 get_gr_data<-function(strDate,NAvalue=NA){ # get growth data from sip data files
     si_gr_flds<-get_si_selected_fld_list()[["gr"]]
     si_gr<-load_fields_from_file("si_gr",rdata.folder,strDate,si_gr_flds)
@@ -201,205 +86,7 @@ get_gr_data<-function(strDate,NAvalue=NA){ # get growth data from sip data files
     }
     return(si_gr)
 }
-get_rat_data<-function(strDate,NAvalue=NA){ # get ratio data from sip files
-    si_rat_flds <-get_si_selected_fld_list()[["rat"]]
-    out<-load_fields_from_file("si_rat",rdata.folder,strDate,si_rat_flds)
-    
-    out$ARTURN_12M_Y1 <- subforna(out$ARTURN_12M - out$ARTURN_Y1,NAvalue)
-    out$ARTURN_12M_Y2 <- subforna(out$ARTURN_12M - out$ARTURN_Y2,NAvalue)
-    out$ARTURN_12M_Y3 <- subforna(out$ARTURN_12M - out$ARTURN_Y3,NAvalue)
-    out$ARTURN_12M_Y4 <- subforna(out$ARTURN_12M - out$ARTURN_Y4,NAvalue)
-    out$ARTURN_12M_Y5 <- subforna(out$ARTURN_12M - out$ARTURN_Y5,NAvalue)
-    out$ARTURN_12M_Y6 <- subforna(out$ARTURN_12M - out$ARTURN_Y6,NAvalue)
-    out$ARTURN_12M_Y7 <- subforna(out$ARTURN_12M - out$ARTURN_Y7,NAvalue)
-    out$ARTURN_12M <- subforna(out$ARTURN_12M,NAvalue)
-    out$ARTURN_Y1 <- subforna(out$ARTURN_Y1,NAvalue)
-    
-    out$CURR_Q1_Y1 <- subforna(out$CURR_Q1 - out$CURR_Y1,NAvalue)
-    out$CURR_Q1_Y2 <- subforna(out$CURR_Q1 - out$CURR_Y2,NAvalue)
-    out$CURR_Q1_Y3 <- subforna(out$CURR_Q1 - out$CURR_Y3,NAvalue)
-    out$CURR_Q1_Y4 <- subforna(out$CURR_Q1 - out$CURR_Y4,NAvalue)
-    out$CURR_Q1_Y5 <- subforna(out$CURR_Q1 - out$CURR_Y5,NAvalue)
-    out$CURR_Q1_Y6 <- subforna(out$CURR_Q1 - out$CURR_Y6,NAvalue)
-    out$CURR_Q1_Y7 <- subforna(out$CURR_Q1 - out$CURR_Y7,NAvalue)
-    out$CURR_Q1 <- subforna(out$CURR_Q1,NAvalue)
-    out$CURR_Y1 <- subforna(out$CURR_Y1,NAvalue)
-    
-    out$ERBV <- subforna(out$ERBV,NAvalue)
-    out$FSCORE_12M <- subforna(out$FSCORE_12M,NAvalue)
-    out$FSCORE_Y1 <- subforna(out$FSCORE_Y1,NAvalue)
-    out$F_12M_Y1 <- subforna(out$FSCORE_12M -out$FSCORE_Y1,NAvalue)
-    
-    out$GPM_12M_A5Y <- subforna(out$GPM_12M - out$GPM_A5Y,NAvalue)
-    out$GPM_12M_Y1 <- subforna(out$GPM_12M - out$GPM_Y1,NAvalue)
-    out$GPM_12M_Y2 <- subforna(out$GPM_12M - out$GPM_Y2,NAvalue)
-    out$GPM_12M_Y3 <- subforna(out$GPM_12M - out$GPM_Y3,NAvalue)
-    out$GPM_12M_Y4 <- subforna(out$GPM_12M - out$GPM_Y4,NAvalue)
-    out$GPM_12M_Y5 <- subforna(out$GPM_12M - out$GPM_Y5,NAvalue)
-    out$GPM_12M_Y6 <- subforna(out$GPM_12M - out$GPM_Y6,NAvalue)
-    out$GPM_12M_Y7 <- subforna(out$GPM_12M - out$GPM_Y7,NAvalue)
-    out$GPM_A5Y <- subforna(out$GPM_A5Y,NAvalue)
-    out$GPM_12M <- subforna(out$GPM_12M,NAvalue)
-    out$GPM_Y1 <- subforna(out$GPM_Y1,NAvalue)
-    
-    out$INVTRN_12M_Y1 <- subforna(out$INVTRN_12M - out$INVTRN_Y1,NAvalue)
-    out$INVTRN_12M_Y2 <- subforna(out$INVTRN_12M - out$INVTRN_Y2,NAvalue)
-    out$INVTRN_12M_Y3 <- subforna(out$INVTRN_12M - out$INVTRN_Y3,NAvalue)
-    out$INVTRN_12M_Y4 <- subforna(out$INVTRN_12M - out$INVTRN_Y4,NAvalue)
-    out$INVTRN_12M_Y5 <- subforna(out$INVTRN_12M - out$INVTRN_Y5,NAvalue)
-    out$INVTRN_12M_Y6 <- subforna(out$INVTRN_12M - out$INVTRN_Y6,NAvalue)
-    out$INVTRN_12M_Y7 <- subforna(out$INVTRN_12M - out$INVTRN_Y7,NAvalue)
-    out$INVTRN_12M <- subforna(out$INVTRN_12M,NAvalue)
-    out$INVTRN_Y1 <- subforna(out$INVTRN_Y1,NAvalue)
-    
-    out$LTD_EQ_Q1_Y1 <- subforna(out$LTD_EQ_Q1 - out$LTD_EQ_Y1,NAvalue)
-    out$LTD_EQ_Q1_Y2 <- subforna(out$LTD_EQ_Q1 - out$LTD_EQ_Y2,NAvalue)
-    out$LTD_EQ_Q1_Y3 <- subforna(out$LTD_EQ_Q1 - out$LTD_EQ_Y3,NAvalue)
-    out$LTD_EQ_Q1_Y4 <- subforna(out$LTD_EQ_Q1 - out$LTD_EQ_Y4,NAvalue)
-    out$LTD_EQ_Q1_Y5 <- subforna(out$LTD_EQ_Q1 - out$LTD_EQ_Y5,NAvalue)
-    out$LTD_EQ_Q1_Y6 <- subforna(out$LTD_EQ_Q1 - out$LTD_EQ_Y6,NAvalue)
-    out$LTD_EQ_Q1_Y7 <- subforna(out$LTD_EQ_Q1 - out$LTD_EQ_Y7,NAvalue)
-    out$LTD_EQ_Q1 <- subforna(out$LTD_EQ_Q1,NAvalue)
-    out$LTD_EQ_Y1 <- subforna(out$LTD_EQ_Y1,NAvalue)
-    
-    out$LTD_TC_Q1_Y1 <- subforna(out$LTD_TC_Q1 - out$LTD_TC_Y1,NAvalue)
-    out$LTD_TC_Q1_Y2 <- subforna(out$LTD_TC_Q1 - out$LTD_TC_Y2,NAvalue)
-    out$LTD_TC_Q1_Y3 <- subforna(out$LTD_TC_Q1 - out$LTD_TC_Y3,NAvalue)
-    out$LTD_TC_Q1_Y4 <- subforna(out$LTD_TC_Q1 - out$LTD_TC_Y4,NAvalue)
-    out$LTD_TC_Q1_Y5 <- subforna(out$LTD_TC_Q1 - out$LTD_TC_Y5,NAvalue)
-    out$LTD_TC_Q1_Y6 <- subforna(out$LTD_TC_Q1 - out$LTD_TC_Y6,NAvalue)
-    out$LTD_TC_Q1_Y7 <- subforna(out$LTD_TC_Q1 - out$LTD_TC_Y7,NAvalue)
-    out$LTD_TC_Q1 <- subforna(out$LTD_TC_Q1,NAvalue)
-    out$LTD_TC_Y1 <- subforna(out$LTD_TC_Y1,NAvalue)
-    
-    out$LTD_WC_Q1 <- subforna(out$LTD_WC_Q1,NAvalue)
-    
-    out$NPM_12M_Y1 <- subforna(out$NPM_12M - out$NPM_Y1,NAvalue)
-    out$NPM_12M_Y2 <- subforna(out$NPM_12M - out$NPM_Y2,NAvalue)
-    out$NPM_12M_Y3 <- subforna(out$NPM_12M - out$NPM_Y3,NAvalue)
-    out$NPM_12M_Y4 <- subforna(out$NPM_12M - out$NPM_Y4,NAvalue)
-    out$NPM_12M_Y5 <- subforna(out$NPM_12M - out$NPM_Y5,NAvalue)
-    out$NPM_12M_Y6 <- subforna(out$NPM_12M - out$NPM_Y6,NAvalue)
-    out$NPM_12M_Y7 <- subforna(out$NPM_12M - out$NPM_Y7,NAvalue)
-    out$NPM_12M <- subforna(out$NPM_12M,NAvalue)
-    out$NPM_Y1 <- subforna(out$NPM_Y1,NAvalue)
-    
-    out$OPM_12M_A3Y <- subforna(out$OPM_12M - out$OPM_A3Y,NAvalue)
-    out$OPM_12M_A5Y <- subforna(out$OPM_12M - out$OPM_A5Y,NAvalue)
-    out$OPM_12M_Y1 <- subforna(out$OPM_12M - out$OPM_Y1,NAvalue)
-    out$OPM_12M_Y2 <- subforna(out$OPM_12M - out$OPM_Y2,NAvalue)
-    out$OPM_12M_Y3 <- subforna(out$OPM_12M - out$OPM_Y3,NAvalue)
-    out$OPM_12M_Y4 <- subforna(out$OPM_12M - out$OPM_Y4,NAvalue)
-    out$OPM_12M_Y5 <- subforna(out$OPM_12M - out$OPM_Y5,NAvalue)
-    out$OPM_12M_Y6 <- subforna(out$OPM_12M - out$OPM_Y6,NAvalue)
-    out$OPM_12M_Y7 <- subforna(out$OPM_12M - out$OPM_Y7,NAvalue)
-    out$OPM_A3Y <- subforna(out$OPM_A3Y,NAvalue)
-    out$OPM_A5Y <- subforna(out$OPM_A5Y,NAvalue)
-    out$OPM_12M <- subforna(out$OPM_12M,NAvalue)
-    out$OPM_Y1 <- subforna(out$OPM_Y1,NAvalue)
-    
-    out$PAYOUT_12M_A7Y <- subforna(out$PAYOUT_12M - out$PAYOUT_A7Y,NAvalue)
-    out$PAYOUT_12M_Y1 <- subforna(out$PAYOUT_12M - out$PAYOUT_Y1,NAvalue)
-    out$PAYOUT_12M_Y2 <- subforna(out$PAYOUT_12M - out$PAYOUT_Y2,NAvalue)
-    out$PAYOUT_12M_Y3 <- subforna(out$PAYOUT_12M - out$PAYOUT_Y3,NAvalue)
-    out$PAYOUT_12M_Y4 <- subforna(out$PAYOUT_12M - out$PAYOUT_Y4,NAvalue)
-    out$PAYOUT_12M_Y5 <- subforna(out$PAYOUT_12M - out$PAYOUT_Y5,NAvalue)
-    out$PAYOUT_12M_Y6 <- subforna(out$PAYOUT_12M - out$PAYOUT_Y6,NAvalue)
-    out$PAYOUT_12M_Y7 <- subforna(out$PAYOUT_12M - out$PAYOUT_Y7,NAvalue)
-    out$PAYOUT_A7Y <- subforna(out$PAYOUT_A7Y,NAvalue)
-    out$PAYOUT_12M <- subforna(out$PAYOUT_12M,NAvalue)
-    out$PAYOUT_Y1 <- subforna(out$PAYOUT_Y1,NAvalue)
-    
-    out$PR_BV_CHG <- subforna(out$PR_BV_CHG,NAvalue)
-    out$PTM_12M <- subforna(out$PTM_12M,NAvalue)
-    
-    out$QUICK_Q1_Y1 <- subforna(out$QUICK_Q1 - out$QUICK_Y1,NAvalue)
-    out$QUICK_Q1_Y2 <- subforna(out$QUICK_Q1 - out$QUICK_Y2,NAvalue)
-    out$QUICK_Q1_Y3 <- subforna(out$QUICK_Q1 - out$QUICK_Y3,NAvalue)
-    out$QUICK_Q1_Y4 <- subforna(out$QUICK_Q1 - out$QUICK_Y4,NAvalue)
-    out$QUICK_Q1_Y5 <- subforna(out$QUICK_Q1 - out$QUICK_Y5,NAvalue)
-    out$QUICK_Q1_Y6 <- subforna(out$QUICK_Q1 - out$QUICK_Y6,NAvalue)
-    out$QUICK_Q1_Y7 <- subforna(out$QUICK_Q1 - out$QUICK_Y7,NAvalue)
-    out$QUICK_Q1 <- subforna(out$QUICK_Q1,NAvalue)
-    out$QUICK_Y1 <- subforna(out$QUICK_Y1,NAvalue)
-    
-    out$RDM_12M <- subforna(out$RDM_12M,NAvalue)
-    
-    out$ROA_12M_Y1 <- subforna(out$ROA_12M - out$ROA_Y1,NAvalue)
-    out$ROA_12M_Y2 <- subforna(out$ROA_12M - out$ROA_Y2,NAvalue)
-    out$ROA_12M_Y3 <- subforna(out$ROA_12M - out$ROA_Y3,NAvalue)
-    out$ROA_12M_Y4 <- subforna(out$ROA_12M - out$ROA_Y4,NAvalue)
-    out$ROA_12M_Y5 <- subforna(out$ROA_12M - out$ROA_Y5,NAvalue)
-    out$ROA_12M_Y6 <- subforna(out$ROA_12M - out$ROA_Y6,NAvalue)
-    out$ROA_12M_Y7 <- subforna(out$ROA_12M - out$ROA_Y7,NAvalue)
-    out$ROA_12M <- subforna(out$ROA_12M,NAvalue)
-    out$ROA_Y1 <- subforna(out$ROA_Y1,NAvalue)
-    
-    out$ROE_12M_A5Y <- subforna(out$ROE_12M - out$ROE_A5Y,NAvalue)
-    out$ROE_12M_A7Y <- subforna(out$ROE_12M - out$ROE_A7Y,NAvalue)
-    out$ROE_12M_Y1 <- subforna(out$ROE_12M - out$ROE_Y1,NAvalue)
-    out$ROE_12M_Y2 <- subforna(out$ROE_12M - out$ROE_Y2,NAvalue)
-    out$ROE_12M_Y3 <- subforna(out$ROE_12M - out$ROE_Y3,NAvalue)
-    out$ROE_12M_Y4 <- subforna(out$ROE_12M - out$ROE_Y4,NAvalue)
-    out$ROE_12M_Y5 <- subforna(out$ROE_12M - out$ROE_Y5,NAvalue)
-    out$ROE_12M_Y6 <- subforna(out$ROE_12M - out$ROE_Y6,NAvalue)
-    out$ROE_12M_Y7 <- subforna(out$ROE_12M - out$ROE_Y7,NAvalue)
-    out$ROE_12M <- subforna(out$ROE_12M,NAvalue)
-    out$ROE_Y1 <- subforna(out$ROE_Y1,NAvalue)
-    out$ROE_A5Y <- subforna(out$ROE_A5Y,NAvalue)
-    out$ROE_A7Y <- subforna(out$ROE_A7Y,NAvalue)
-    
-    out$TA_TRN_12M_Y1 <- subforna(out$TA_TRN_12M - out$TA_TRN_Y1,NAvalue)
-    out$TA_TRN_12M_Y2 <- subforna(out$TA_TRN_12M - out$TA_TRN_Y2,NAvalue)
-    out$TA_TRN_12M_Y3 <- subforna(out$TA_TRN_12M - out$TA_TRN_Y3,NAvalue)
-    out$TA_TRN_12M_Y4 <- subforna(out$TA_TRN_12M - out$TA_TRN_Y4,NAvalue)
-    out$TA_TRN_12M_Y5 <- subforna(out$TA_TRN_12M - out$TA_TRN_Y5,NAvalue)
-    out$TA_TRN_12M_Y6 <- subforna(out$TA_TRN_12M - out$TA_TRN_Y6,NAvalue)
-    out$TA_TRN_12M_Y7 <- subforna(out$TA_TRN_12M - out$TA_TRN_Y7,NAvalue)
-    out$TA_TRN_12M <- subforna(out$TA_TRN_12M,NAvalue)
-    out$TA_TRN_Y1 <- subforna(out$TA_TRN_Y1,NAvalue)
-    
-    out$TIE_12M_Y1 <- subforna(out$TIE_12M - out$TIE_Y1,NAvalue)
-    out$TIE_12M_Y2 <- subforna(out$TIE_12M - out$TIE_Y2,NAvalue)
-    out$TIE_12M_Y3 <- subforna(out$TIE_12M - out$TIE_Y3,NAvalue)
-    out$TIE_12M_Y4 <- subforna(out$TIE_12M - out$TIE_Y4,NAvalue)
-    out$TIE_12M_Y5 <- subforna(out$TIE_12M - out$TIE_Y5,NAvalue)
-    out$TIE_12M_Y6 <- subforna(out$TIE_12M - out$TIE_Y6,NAvalue)
-    out$TIE_12M_Y7 <- subforna(out$TIE_12M - out$TIE_Y7,NAvalue)
-    out$TIE_12M <- subforna(out$TIE_12M,NAvalue)
-    out$TIE_Y1 <- subforna(out$TIE_Y1,NAvalue)
-    
-    out$TL_TA_Q1_Y1 <- subforna(out$TL_TA_Q1 - out$TL_TA_Y1,NAvalue)
-    out$TL_TA_Q1_Y2 <- subforna(out$TL_TA_Q1 - out$TL_TA_Y2,NAvalue)
-    out$TL_TA_Q1_Y3 <- subforna(out$TL_TA_Q1 - out$TL_TA_Y3,NAvalue)
-    out$TL_TA_Q1_Y4 <- subforna(out$TL_TA_Q1 - out$TL_TA_Y4,NAvalue)
-    out$TL_TA_Q1_Y5 <- subforna(out$TL_TA_Q1 - out$TL_TA_Y5,NAvalue)
-    out$TL_TA_Q1_Y6 <- subforna(out$TL_TA_Q1 - out$TL_TA_Y6,NAvalue)
-    out$TL_TA_Q1_Y7 <- subforna(out$TL_TA_Q1 - out$TL_TA_Y7,NAvalue)
-    out$TL_TA_Q1 <- subforna(out$TL_TA_Q1,NAvalue)
-    out$TL_TA_Y1 <- subforna(out$TL_TA_Y1,NAvalue)    
-    
-    for (x in c(
-            "ARTURN_Y2","ARTURN_Y3","ARTURN_Y4","ARTURN_Y5","ARTURN_Y6","ARTURN_Y7",
-            "CURR_Y2","CURR_Y3","CURR_Y4","CURR_Y5","CURR_Y6","CURR_Y7",
-            "GPM_Y2","GPM_Y3","GPM_Y4","GPM_Y5","GPM_Y6","GPM_Y7",
-            "INVTRN_Y2","INVTRN_Y3","INVTRN_Y4","INVTRN_Y5","INVTRN_Y6","INVTRN_Y7",
-            "LTD_EQ_Y2","LTD_EQ_Y3","LTD_EQ_Y4","LTD_EQ_Y5","LTD_EQ_Y6","LTD_EQ_Y7",
-            "LTD_TC_Y2","LTD_TC_Y3","LTD_TC_Y4","LTD_TC_Y5","LTD_TC_Y6","LTD_TC_Y7",
-            "NPM_Y2","NPM_Y3","NPM_Y4","NPM_Y5","NPM_Y6","NPM_Y7",
-            "OPM_Y2","OPM_Y3","OPM_Y4","OPM_Y5","OPM_Y6","OPM_Y7",
-            "PAYOUT_Y2","PAYOUT_Y3","PAYOUT_Y4","PAYOUT_Y5","PAYOUT_Y6","PAYOUT_Y7",
-            "QUICK_Y2","QUICK_Y3","QUICK_Y4","QUICK_Y5","QUICK_Y6","QUICK_Y7",
-            "ROA_Y2","ROA_Y3","ROA_Y4","ROA_Y5","ROA_Y6","ROA_Y7",
-            "ROE_Y2","ROE_Y3","ROE_Y4","ROE_Y5","ROE_Y6","ROE_Y7",
-            "TA_TRN_Y2","TA_TRN_Y3","TA_TRN_Y4","TA_TRN_Y5","TA_TRN_Y6","TA_TRN_Y7",
-            "TIE_Y2","TIE_Y3","TIE_Y4","TIE_Y5","TIE_Y6","TIE_Y7",
-            "TL_TA_Y2","TL_TA_Y3","TL_TA_Y4","TL_TA_Y5","TL_TA_Y6","TL_TA_Y7",
-            "FSCORE_Y3","FSCORE_Y5")) {
-        out[,x] <- NULL
-    }
-    return(out)
-}
+
 get_psd_data<-function(strDate,NAvalue=NA){
     si_psd_flds<-get_si_selected_fld_list()[["psd"]]
     out<-load_fields_from_file("si_psd",rdata.folder,strDate,si_psd_flds)
