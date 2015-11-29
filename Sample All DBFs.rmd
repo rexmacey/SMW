@@ -1,0 +1,38 @@
+---
+title: "Sample of DBF files"
+author: "Rex Macey"
+date: "November 29, 2015"
+output: html_document
+---
+
+Open each DBF file and print out the head of the first six columns
+
+```{r echo=FALSE, warning=FALSE, message=FALSE, error=FALSE}
+setwd("C:/Users/Rex/Documents/Quant Trading/SMW")
+source("SMWutilities.r")
+init_environment()
+mainfolder <- "D:/SIPro"
+source("convertdbf2rdata.r")
+all_dbfs<-open_all_dbfs()
+    
+```
+
+```{r}
+for (i in 1:length(all_dbfs)){
+        print(paste(names(all_dbfs)[i],"#fields=",ncol(all_dbfs[[i]]),"#obs=",nrow(all_dbfs[[i]])))
+        print(head(all_dbfs[[i]][,1:6]))
+        print(" ")
+}
+```
+
+Field names (%NA)
+```{r}
+for (i in 1:length(all_dbfs)){
+        pctna<-round(100*apply(is.na(all_dbfs[[i]]),2,sum)/nrow(all_dbfs[[i]]),0)
+        n<-names(all_dbfs[[i]])
+        s<-paste0(n,"(",as.character(pctna),"%)")
+        print(paste(names(all_dbfs)[i],"#fields=",ncol(all_dbfs[[i]]),"#obs=",nrow(all_dbfs[[i]])))
+        print(s)
+        print(" ")
+}
+```

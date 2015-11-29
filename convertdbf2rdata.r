@@ -113,3 +113,81 @@ cleanfile<-function(df){
     }
     return(df)
 }
+
+convert_1install_dbf_to_rds<-function(strDate){ 
+    print(strDate)
+    sipfolder <- dbflocations(strDate)
+    to_process <- read.table(text =
+                                 "NAME     DIR       NEED_CLEAN
+                             ci       static    FALSE
+                             mlt      dbfs      TRUE
+                             isq      static    TRUE
+                             gr       dbfs      TRUE
+                             perc     dbfs      TRUE
+                             rat      dbfs      TRUE
+                             psd      dbfs      TRUE
+                             isa      static    TRUE
+                             ee       dbfs      TRUE
+                             bsa      static    TRUE
+                             bsq      static    TRUE
+                             val      dbfs      TRUE
+                             cfa      static    TRUE
+                             cfq      static    TRUE
+                             psdc     dbfs      TRUE
+                             psdd     dbfs      TRUE", header = TRUE, stringsAsFactors = FALSE)
+
+    files <- sprintf("si_%s", to_process$NAME)
+    dirs  <- sipfolder[to_process$DIR]
+    need_clean <- to_process$NEED_CLEAN
+    out <- read.dbf(file = paste0(file.path(dirs[1], files[1]),".dbf"), as.is = TRUE)
+    if (need_clean[1]) data <- cleanfile(data)
+    for (i in 2:length(files)) {
+      data <- read.dbf(file = paste0(file.path(dirs[i], files[i]),".dbf"), as.is = TRUE)
+      if (need_clean[i]) data <- cleanfile(data)
+      out<-merge(out,data,by="COMPANY_ID")
+    }
+    idx<-apply(is.na(out),2,sum)==nrow(out)
+    out<-out[!idx]
+    for (x in c("IND_2_DIG","IND_3_DIG","SP","EXCHANGE","STATE","COUNTRY","DOW")){
+        out[,x] <- factor(out[,x])
+    }
+    # needed to ensure consistency across all installs
+    levels(out$SP) <- c("400","500","600","x") # needed to ensure consistency across all installs
+    levels(out$EXCHANGE) <- c("A","M","N","O","x")
+    levels(out$IND_2_DIG)<-c("01","02","03","04","05","06","07","08","09","10","11","12","x")
+    out$ADR<-factor(out$ADR)
+    out$OPTIONABLE<-factor(out$OPTIONABLE)
+    idx <- substr(names(out),1,5)=="REPNO" | substr(names(out),1,7)=="LASTMOD"
+    out<-out[!idx]
+    idx <- out$PRICE>=5 & out$MKTCAP >=250
+    out<-out[idx,]
+    saveRDS(out,file=paste0(rdata.folder,"sip_",strDate,".rds"))
+    return(NULL)
+}
+
+open_all_dbfs<-function(i=1){
+    # utility function to open all dbfs, so one can inspect various data
+    out<-list()
+    strDate<-sipbInstallDates[i]
+    folders_list<-c("/Dbfs/","/Static/")
+    for (f in folders_list){
+        file_list<-list.files(path=paste0(mainfolder,"/sip",strDate,f),pattern = "*.dbf")
+        for (fn in file_list){
+            if (substr(fn,nchar(fn)-3,nchar(fn))==".dbf"){
+                out[[fn]] <- read.dbf(file = paste0(mainfolder,"/sip",strDate,f,fn), as.is = TRUE)    
+            }
+        }
+    }
+    return(out)
+}
+
+sample_all_dbfs<-function(i=1){
+    all_dbfs<-open_all_dbfs()
+    for (i in 1:length(all_dbfs)){
+        print(paste(names(all_dbfs)[i],"#fields=",ncol(all_dbfs[[i]]),"#obs=",nrow(all_dbfs[[i]])))
+        print(head(all_dbfs[[i]][,1:6]))
+        print(" ")
+    }
+}
+
+
