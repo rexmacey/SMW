@@ -7,13 +7,13 @@ predict_from_random_forest <- function(Y_M = 1,top.n = 50,YType="RET") {
     rf.lst <- list()
     installs.n <- length(sipbInstallDates)
     
+    xstats.lst<-list()
     out <-
         matrix(
-            NA,nrow = installs.n - Y_M - 13,ncol = 9,dimnames = list(
-                sipbInstallDates[1:(installs.n -
-                                        Y_M - 13)],c(
-                                            "EWLong","RWLong","CWLong","EWMkt","CWMkt","Corr","EWShort","RWShort","CWShort"
-                                        )
+            NA,nrow = installs.n, ncol = 9,dimnames = list(
+                sipbInstallDates,c(
+                    "EWLong","RWLong","CWLong","EWMkt","CWMkt","Corr","EWShort","RWShort","CWShort"
+                )
             )
         )
     
@@ -25,8 +25,8 @@ predict_from_random_forest <- function(Y_M = 1,top.n = 50,YType="RET") {
         rf.lst[[i+1]] <- rf1
     }
     
-    for (j in 1:(installs.n - 13 - Y_M)) {
-        print(j)
+    for (j in 1:(installs.n - 12 - 2*Y_M)) {
+        print(paste("Predict from RF",j))
         for (i in 1:12) {
             #load 12 random forests
             if (i < 12) {
@@ -41,11 +41,11 @@ predict_from_random_forest <- function(Y_M = 1,top.n = 50,YType="RET") {
             }
         }
         load(paste(
-            rdata.folder,"xdata",sipbInstallDates[j + 12 - 1 + Y_M + 1],".rdata",sep =
+            rdata.folder,"xdata",sipbInstallDates[j + 12 + Y_M],".rdata",sep =
                 ""
         ))
         load(paste(
-            rdata.folder,"ydata",sipbInstallDates[j + 12 - 1 + Y_M + 1],".rdata",sep =
+            rdata.folder,"ydata",sipbInstallDates[j + 12 +Y_M],".rdata",sep =
                 ""
         ))
         
@@ -59,13 +59,24 @@ predict_from_random_forest <- function(Y_M = 1,top.n = 50,YType="RET") {
         x.df$INSTALLDT <- NULL
         x.df$COMPANY <- NULL
         x.df$TICKER <- NULL
+        # replace na with median in x
+        for (i in 6:ncol(x.df)){
+            x.df[,i]<-ReplNAwMedian(x.df[,i])
+        }
+        for (i in 6:ncol(x.df)){
+            x.df[,i]<-ReplInfWithMedian(x.df[,i])
+        }
         x.df <- x.df[complete.cases(x.df),]
         xy.df <- merge(x.df,y.df,by = "row.names")
+        
+        #xy.df$IND_2_DIG<-"01" # test ignoring industry
+        
         y.df <-
             data.frame(YRet = xy.df[,yvar(Y_M)],row.names = row.names(xy.df))
         x.df <- xy.df
         x.df[,yvar(Y_M)] <- NULL
         x.df$Row.names <- NULL
+        #xy.df$IND_2_DIG<-"01" # test ignoring industry
         
         # get rid of Inf values - this should be in the CreateData script
         idx.inf <- apply(x.df[,6:ncol(x.df)],2,max)==Inf
@@ -82,9 +93,10 @@ predict_from_random_forest <- function(Y_M = 1,top.n = 50,YType="RET") {
         
         sort.idx <- order(y.pred,decreasing = TRUE)[1:top.n]
         yy <- data.frame(pred = y.pred,act = y.df)[sort.idx,]
-        out[j,"EWLong"] <- mean(yy[,"YRet"])
-        out[j,"RWLong"] <- wt.mean(yy[,"YRet"],1 / x.df$PRCHG_SD3Y[sort.idx])
-        out[j,"CWLong"] <-  wt.mean(yy[,"YRet"],x.df$MKTCAP[sort.idx])
+        k<-j+12+2*Y_M
+        out[k,"EWLong"] <- mean(yy[,"YRet"])
+        out[k,"RWLong"] <- wt.mean(yy[,"YRet"],1 / x.df$PRCHG_SD3Y[sort.idx])
+        out[k,"CWLong"] <-  wt.mean(yy[,"YRet"],x.df$MKTCAP[sort.idx])
         x.mkt.wtd.mean<-apply(x.df[,6:ncol(x.df)],2,wt.mean,wt=x.df$MKTCAP)
         x.mkt.wtd.sd<-apply(x.df[,6:ncol(x.df)],2,wt.sd,wt=x.df$MKTCAP)
         x.mkt.mean<-apply(x.df[,6:ncol(x.df)],2,mean)
@@ -95,15 +107,18 @@ predict_from_random_forest <- function(Y_M = 1,top.n = 50,YType="RET") {
         
         sort.idx <- order(y.pred,decreasing = FALSE)[1:top.n]
         yy <- data.frame(pred = y.pred,act = y.df)[sort.idx,]
-        out[j,"EWShort"] <- mean(yy[,"YRet"])
-        out[j,"RWShort"] <- wt.mean(yy[,"YRet"],1 / x.df$PRCHG_SD3Y[sort.idx])
-        out[j,"CWShort"] <- sum(wts.cap * yy[,"YRet"])
+        out[k,"EWShort"] <- mean(yy[,"YRet"])
+        out[k,"RWShort"] <- wt.mean(yy[,"YRet"],1 / x.df$PRCHG_SD3Y[sort.idx])
+        out[k,"CWShort"] <- wt.mean(yy[,"YRet"],x.df$MKTCAP[sort.idx])
         x.short.wtd.mean<-apply(x.df[sort.idx,6:ncol(x.df)],2,wt.mean,wt=x.df$MKTCAP[sort.idx])
         x.short.mean<-apply(x.df[sort.idx,6:ncol(x.df)],2,mean)
         
-        out[j,"EWMkt"] <- mean(y.df$YRet)
-        out[j,"CWMkt"] <- wt.mean(xy.df[,yvar(Y_M)],xy.df$MKTCAP)
-        out[j,"Corr"] <- cor(y.pred,y.df$YRet)
+        out[k,"EWMkt"] <- mean(y.df$YRet)
+        out[k,"CWMkt"] <- wt.mean(xy.df[,yvar(Y_M)],xy.df$MKTCAP)
+        out[k,"Corr"] <- cor(y.pred,y.df$YRet)
+        xstats.lst[[k]]<-list(x.mkt.wtd.mean=x.mkt.wtd.mean,x.mkt.wtd.sd=x.mkt.wtd.sd,x.mkt.mean=x.mkt.mean,
+                      x.mkt.sd=x.mkt.sd,x.long.wtd.mean=x.long.wtd.mean,x.long.mean=x.long.mean,
+                      x.short.wtd.mean=x.short.wtd.mean,x.short.mean=x.short.mean)
     }
     out <- data.frame(out)
     out$CW_LvM <- out$CWLong - out$CWMkt
@@ -112,10 +127,8 @@ predict_from_random_forest <- function(Y_M = 1,top.n = 50,YType="RET") {
     out$CW_LvS <- out$CWLong - out$CWShort
     out$RW_LvS <- out$RWLong - out$RWShort
     out$EW_LvS <- out$EWLong - out$EWShort
-    x.stats<-list(x.mkt.wtd.mean=x.mkt.wtd.mean,x.mkt.wtd.sd=x.mkt.wtd.sd,x.mkt.mean=x.mkt.mean,
-                  x.mkt.sd=x.mkt.sd,x.long.wtd.mean=x.long.wtd.mean,x.long.mean=x.long.mean,
-                  x.short.wtd.mean=x.short.wtd.mean,x.short.mean=x.short.mean)
-    Predict<-list(top.n=top.n,sipbInstallDates=sipbInstallDates,Results=out[complete.cases(out),],YType=YType,x.stats)
+    names(xstats.lst)<-sipbInstallDates[]
+    Predict<-list(top.n=top.n,sipbInstallDates=sipbInstallDates,Results=out[complete.cases(out),],YType=YType,x.stats=xstats.lst)
     save(Predict,
          file = paste0(rdata.folder,"Results",Y_M,"M",top.n,YType,"_",format(Sys.Date(),'%Y%m%d'),".rdata"))
     return(out)
