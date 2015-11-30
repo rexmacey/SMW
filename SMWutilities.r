@@ -9,6 +9,44 @@ init_environment<-function(){
     assign("mainfolder","D:/SIPro",envir=.GlobalEnv)
 }
 
+xdata_prep<-function(x){
+    #input an xdata file. Remove character fields and Install Date
+    # for testing load(paste0(rdata.folder,"xdata20030103.rdata"))
+    # for testing x<-xdata
+    vtypes<-sapply(x,class) #remove character columns
+    x<-x[,!vtypes=="character"]
+    x<-ReplInfWithNA(x)
+}
+
+combine_xy<-function(i,Y_M=1){ 
+    # loads xdata, removes character variables, replaced Inf w NA
+    # combines with ydata
+    load(paste0(rdata.folder,"xdata",sipbInstallDates[i],".rdata"))
+    x<-xdata_prep(xdata)
+    load(paste0(rdata.folder,"ydata",sipbInstallDates[i],".rdata"))
+    y <- ydata[,c("COMPANY_ID","INSTALLDT",yvar(Y_M))]
+    y <- y[complete.cases(y),]
+    y$COMPANY_ID <- NULL
+    y$INSTALLDT <- NULL
+    xy <- merge(x,y,by = "row.names")
+    rownames(xy)<-xy$Row.names
+    xy$Row.names<-NULL
+    names(xy)[ncol(xy)]<-"YRet"
+    return(xy)
+}
+
+ReplNAwMedian<-function(x){
+    idx <- is.na(x)
+    x[idx]<-median(x,na.rm=TRUE)
+    return(x)
+}
+
+ReplInfWithNA<-function(x){ # replace Inf values with median
+    idx <- x == Inf | x == -Inf
+    x[idx] <- NA
+    return(x)
+}
+
 ReplInfWithMedian<-function(x){ # replace Inf values with median
     idx <- x == Inf | x == -Inf
     x[idx] <- median(x[!idx])
@@ -29,23 +67,30 @@ yvar <- function(Y_M) {
 
 generate_returns<-function(strDate){
     #calculate one month of returns, update returns.monthly and save
-    #returns.monthly<-data.frame(matrix(ncol = 7, nrow = 0,
-    #                                   dimnames=list(NULL,c("COMPANY_ID","PRICEDM001","PRICEDM002","RET","INSTALLDT","PRICE_M001","PRICE_M002"))))
+    #
+        if (! file.exists(paste0(rdata.folder,"returnsmonthly.rdata"))){
+            returns.monthly<-data.frame(matrix(ncol = 7, nrow = 0,
+            dimnames=list(NULL,c("COMPANY_ID","PRICEDM001","PRICEDM002","RET","INSTALLDT","PRICE_M001","PRICE_M002"))))
+        } else {
+            if (!exists("returns.monthly")) load(paste(rdata.folder,"returnsmonthly.rdata",sep=""))
+        }
+        library(foreign)
         print(as.character(strDate))
         sipfolder<-dbflocations(strDate)
-        si_psdc <- loadfile("si_psdc", sipfolder["dbfs"],F,c("COMPANY_ID","PRICE_M001","PRICE_M002"))
-        si_psdd <- loadfile("si_psdd", sipfolder["dbfs"],F,c("COMPANY_ID","PRICEDM001","PRICEDM002"))
+        si_psdc <- loadfile("si_psdc.dbf", sipfolder["dbfs"],c("COMPANY_ID","PRICE_M001","PRICE_M002"))
+        si_psdd <- loadfile("si_psdd.dbf", sipfolder["dbfs"],c("COMPANY_ID","PRICEDM001","PRICEDM002"))
         z<-merge(si_psdd,si_psdc,by="COMPANY_ID")
-        z<-tonumeric(z,c("PRICE_M001","PRICE_M002"))
+        z[,"PRICE_M001"] <- as.numeric(z[,"PRICE_M001"])
+        z[,"PRICE_M002"] <- as.numeric(z[,"PRICE_M002"])
         z<-z[complete.cases(z),]
         z<-z[z$PRICE_M001>0 & z$PRICE_M002>0,]
         z$RET <- 100*(z$PRICE_M001/z$PRICE_M002-1)
+        z<-z[!duplicated(z$COMPANY_ID),]
         z$INSTALLDT <- strDate
-        if (!exists("returns.monthly")) load(paste(rdata.folder,"returnsmonthly.rdata",sep=""))
         returns.monthly<-rbind(returns.monthly,z)
-
+        returns.monthly <-
+            returns.monthly[!duplicated(returns.monthly[,c("COMPANY_ID","PRICEDM001","PRICEDM002")]),]
     save(returns.monthly,file="returnsmonthly.rdata")
-    beep(3)
     return(returns.monthly)
 }
 
@@ -126,3 +171,35 @@ rsq_by_month<-function(){
            text.col=c("blue","green"),lty=c(0,0),
            pch=c(16,18),col=c("blue","green"))
 }
+
+NumericColumns<-function(x){
+    out<-sapply(xdata,class)=="numeric"
+}
+
+loadfile<-function(fn,folder,flds=NULL){
+    # loads the fields (all fields if flds==NULL) from dbf fn in folder
+    if (is.null(flds)){
+        data<-read.dbf(file=paste0(folder,"/",fn),as.is = T)    
+    } else {
+        data<-read.dbf(file=paste0(folder,"/",fn),as.is = T)[,flds]
+    }
+    return(data)
+}
+
+na_freq_over_time<-function(fld){ # calc and plot % of na values for a field for each install 
+    n.dates<-length(sipbInstallDates)
+    out<-vector("numeric",n.dates)
+    for (i in 1:n.dates){
+        sdate<-sipbInstallDates[i]
+        x<-readRDS(paste0(rdata.folder,"sip_",sdate,".rds"))[fld]
+        out[i]<-100*apply(is.na(x),2,sum)/nrow(x)
+    }
+    s1<-paste0("Max = ",round(out[which.max(out)],2)," (",sipbInstallDates[which.max(out)],")")
+    s2<-paste0("Min = ",round(out[which.min(out)],2)," (",sipbInstallDates[which.min(out)],")")
+    plot(out,xlab="Installation #",ylab="% NA",main=paste("Percent NA for",fld))
+    text(x=c(25,25),y=c(out[which.max(out)],out[which.min(out)]),labels=c(s1,s2))
+    return(out)
+}
+
+attr(na_freq_over_time,"comment") <-
+    "na_freq_over_time is useful for variable exploration. It calculates and plots the % of na values for a field for each install"
