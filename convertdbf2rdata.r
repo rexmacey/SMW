@@ -48,7 +48,9 @@ cleanfile<-function(df){
     return(df)
 }
 
-convert_1install_dbf_to_rds<-function(strDate){
+convert_1install_dbf_to_rds<-function(i){
+    strDate<-sipbInstallDates[i]
+    library(stringr)
     blndebug<-FALSE
     print(strDate)
     sipfolder <- dbflocations(strDate)
@@ -98,10 +100,15 @@ convert_1install_dbf_to_rds<-function(strDate){
       if (blndebug) print(paste0("out rows after merge: ",nrow(out)))
       if (blndebug) message("number of duplicates: ", sum(duplicated(out$COMPANY_ID)))
     }
-    
+    # remove NA or blankcompany ID
+    bad.idx<-is.na(out$COMPANY_ID) | (str_trim(out$COMPANY_ID)=="")
+    out<-out[!bad.idx,]
+    # remove ETFs by SIC code=6799 (may remove a company or so)
+    bad.idx<-out$SIC=="6799"
+    out<-out[!bad.idx,]
     # remove dupes
-    dup.idx<-duplicated(out$COMPANY_ID)
-    out<-out[!dup.idx,]
+    bad.idx<-duplicated(out$COMPANY_ID)
+    out<-out[!bad.idx,]
     idx<-apply(is.na(out),2,sum)==nrow(out) # get rid of NA columns
     out<-out[!idx]
     idx<-grep("UPDATE",colnames(out))
@@ -117,17 +124,22 @@ convert_1install_dbf_to_rds<-function(strDate){
     out$OPTIONABLE<-factor(out$OPTIONABLE)
     idx <- substr(names(out),1,5)=="REPNO" | substr(names(out),1,7)=="LASTMOD"
     out<-out[!idx]
-    idx <- out$PRICE>=5 & out$MKTCAP >=250
+    idx <- out$PRICE>=5 & out$MKTCAP >=200
     out<-out[idx,]
+    # idx<-order(out$MKTCAP,decreasing = TRUE) if we want to limit the number
+    #out<-out[idx[1:3000],]
     saveRDS(out,file=paste0(rdata.folder,"sip_",strDate,".rds"))
-    return(out)
+    return(NULL)
 }
 
-convert_all_dbf_files_to_rds<-function(){  #convert all files
-    for (i in sipbInstallDates){
-        print(i)
-        data<-convert_1install_dbf_to_rds(i)
-    }
+convert_all_dbf_files_to_rds<-function(istart=NA,iend=NA){ 
+    #convert all files
+    if (is.na(istart)) istart<-1
+    if (is.na(iend)) iend<-length(sipbInstallDates)
+    #for (i in istart:iend){
+    #    data<-convert_1install_dbf_to_rds(i)
+    #}
+    out<-lapply(seq(istart,iend),convert_1install_dbf_to_rds)
 }
 
 open_all_dbfs<-function(i=1){
@@ -155,4 +167,11 @@ sample_all_dbfs<-function(i=1){
     }
 }
 
-
+checkforNAorBlankCoID<-function(i){
+    strDate<-sipbInstallDates[i]
+    out<-readRDS(paste0(rdata.folder,"sip_",strDate,".rds"))
+    out<-out[,"COMPANY_ID"]
+    cntna<-sum(is.na(out))
+    cntblank<-sum(str_trim(out)=="")
+    return(c(cntna,cntblank))
+}
