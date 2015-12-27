@@ -124,7 +124,8 @@ convert_1install_dbf_to_rds<-function(i){
     out$OPTIONABLE<-factor(out$OPTIONABLE)
     idx <- substr(names(out),1,5)=="REPNO" | substr(names(out),1,7)=="LASTMOD"
     out<-out[!idx]
-    idx <- out$PRICE>=5 & out$MKTCAP >=200
+    out$AVGDLRVOL<-out$PRICE*out$AVM_03M*(1000/21) # in 1000s of shares. Avg 21 days per month
+    idx <- out$PRICE>=5 & out$AVGDLRVOL>=2000000
     out<-out[idx,]
     # idx<-order(out$MKTCAP,decreasing = TRUE) if we want to limit the number
     #out<-out[idx[1:3000],]
